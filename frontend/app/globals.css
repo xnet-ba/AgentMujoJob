@@ -1,0 +1,12 @@
+body { font-family: system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #1a1a1a; }
+.wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+h1 { font-size: 2rem; margin-bottom: 0.2rem; } .pod { color: #555; margin-bottom: 1.5rem; }
+form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+input[type=text] { flex: 1; padding: 0.7rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; }
+button { padding: 0.7rem 1.2rem; font-size: 1rem; border: 0; border-radius: 8px; background: #0b5fff; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; }
+.kartica { background: #fff; border-radius: 10px; padding: 1rem; margin: 0.7rem 0; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.ocjena { font-weight: bold; color: #0b5fff; }
+.meta { color: #555; font-size: 0.9rem; }
+.greska { background: #ffe3e3; padding: 0.8rem; border-radius: 8px; }
+.prazno { background: #fff; padding: 1rem; border-radius: 8px; }

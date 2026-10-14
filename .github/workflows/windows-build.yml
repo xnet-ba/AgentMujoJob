@@ -1,0 +1,16 @@
+name: windows-build
+on: { workflow_dispatch: {}, release: { types: [published] } }
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cd frontend && npm ci && npm run build
+        env: { TAURI_BUILD: "1" }
+      - uses: tauri-apps/tauri-action@v0
+        with: { projectPath: desktop }
+      - uses: actions/upload-artifact@v4
+        with: { name: AgentMujoJob-windows, path: "desktop/src-tauri/target/release/bundle/**/*.msi" }

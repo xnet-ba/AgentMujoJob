@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+backend/data/
+node_modules/
+frontend/.next/
+frontend/out/
+desktop/src-tauri/target/
+*.msi
+*.exe
+dist/
+.coverage

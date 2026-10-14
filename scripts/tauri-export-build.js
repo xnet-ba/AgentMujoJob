@@ -1,8 +1,3 @@
-// Windows-proof Tauri export build: bez shell varijabli, redirekcija i && lanaca.
-// 1. upiše frontend/.tauri-export flag (next.config.js tada radi output:"export"),
-// 2. pokrene `npm run build` s cwd=frontend i eksplicitnim envom (child_process,
-//    varijable sigurno stižu do childa na svim platformama),
-// 3. provjeri frontend/out/index.html, 4. obriše flag.
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
@@ -14,17 +9,15 @@ const outIndex = path.join(frontend, "out", "index.html");
 
 try {
   fs.writeFileSync(flag, "x");
-  const win = process.platform === "win32";
-  const r = spawnSync(win ? "npm.cmd" : "npm", ["run", "build"], {
+  const r = spawnSync("npm.cmd", ["run", "build"], {
     cwd: frontend,
     stdio: "inherit",
-    shell: win, // .cmd/.bat se na Windowsu izvršavaju samo kroz shell
+    shell: true,
     env: { ...process.env, TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" },
   });
-  if (r.error) throw new Error("spawn neuspješan: " + r.error.message);
-  if (r.status !== 0) throw new Error("next build pao s kodom " + r.status);
-  if (!fs.existsSync(outIndex)) throw new Error("nema frontend/out/index.html — export nije uspio");
-  console.log("tauri-export-build: OK", outIndex);
+  if (r.status !== 0) throw new Error("next build failed with code " + r.status);
+  if (!fs.existsSync(outIndex)) throw new Error("nema frontend/out/index.html");
+  console.log("tauri-export-build: OK");
 } finally {
-  try { fs.unlinkSync(flag); } catch (_) { /* već obrisan */ }
+  try { fs.unlinkSync(flag); } catch (_) {}
 }

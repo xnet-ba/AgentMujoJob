@@ -1,6 +1,10 @@
-from app.ai_providers import tumaci_upit
-from app.ranking import rangiraj
+"""Testovi jedinog AI puta (OpenCode CLI). Nema fallbacka — neuspjeh baca AiNedostupan."""
+import pytest
+
+import app.ai_providers as ap
+from app.ai_providers import AiNedostupan, tumaci_upit
 from app.criteria import parsiraj_kriterije
+from app.ranking import rangiraj
 from .fixtures import TEST_OGLASI
 
 
@@ -17,7 +21,44 @@ def test_rangiranje_ne_kaznjava_platu_koje_nema():
     assert ocjena > 0 and any("remote" in z.lower() for z in za)
 
 
-def test_ai_fallback_radi_bez_kljuca():
-    r = tumaci_upit("posao kuhara u Sarajevu")
-    assert r.provider in ("fallback", "ollama", "openai", "openrouter")
-    assert r.kriteriji.grad == "Sarajevo" or r.kriteriji.drzava == "Bosna i Hercegovina"
+def test_ai_bez_cli_baca():
+    import shutil
+    orig = shutil.which
+    shutil.which = lambda *a, **k: None
+    try:
+        with pytest.raises(AiNedostupan):
+            tumaci_upit("posao kuhara u Sarajevu")
+    finally:
+        shutil.which = orig
+
+
+def test_ai_opencode_json_spaja_s_parserom(monkeypatch):
+    monkeypatch.setattr("shutil.which", lambda *a, **k: "/usr/bin/opencode")
+
+    class P:
+        returncode = 0
+        stdout = 'neki tekst {"grad": "Mostar", "plata_min": 2000, "plata_valuta": "BAM"} kraj'
+
+    monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: P())
+    r = tumaci_upit("posao u Mostaru plata 2000 KM")
+    assert r.provider == "opencode"
+    assert r.kriteriji.grad == "Mostar" and r.kriteriji.plata_min == 2000.0
+
+
+def test_ai_pad_cli_baca_bez_fallbacka(monkeypatch):
+    monkeypatch.setattr("shutil.which", lambda *a, **k: "/usr/bin/opencode")
+    monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(OSError("pad")))
+    with pytest.raises(AiNedostupan):
+        tumaci_upit("posao kuhara u Sarajevu")
+
+
+def test_ai_los_json_baca(monkeypatch):
+    monkeypatch.setattr("shutil.which", lambda *a, **k: "/usr/bin/opencode")
+
+    class P:
+        returncode = 0
+        stdout = "samo tekst bez ikakvog jsona"
+
+    monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: P())
+    with pytest.raises(AiNedostupan):
+        tumaci_upit("posao kuhara u Sarajevu")

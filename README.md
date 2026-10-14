@@ -25,9 +25,9 @@ Open-source AI asistent za pronalazak posla. Web aplikacija + Windows 11 desktop
 7. [AI pretraga i rangiranje](#ai-pretraga-i-rangiranje)
 8. [Privatnost](#privatnost)
 9. [Sigurnost](#sigurnost)
-10. [Appwrite skladištenje](#appwrite-skladištenje)
+10. [Anonimnost: bez perzistencije](#anonimnost-bez-perzistencije)
 11. [Windows 11 aplikacija](#windows-11-aplikacija)
-12. [Produkcija (Hestia)](#produkcija-hestia)
+12. [Produkcija](#produkcija)
 13. [Testiranje](#testiranje)
 14. [Struktura projekta](#struktura-projekta)
 15. [Status i poznata ograničenja](#status-i-poznata-ograničenja)
@@ -59,7 +59,7 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 | 🌍 Filteri | Država, grad, kategorija, remote/hibrid/lokacija, ugovor, plata, datum |
 | 🔌 Konektori | Modularni; provjeren Greenhouse API (1102 oglasa u probnom skenu), RSS adapter, dokumentirani kandidati (EURES, Remotive, RemoteOK, Arbeitnow, JobTech, Ashby, WWR, Posao.hr) |
 | 🧹 Kvalitet podataka | Normalizacija, deduplikacija, provjera svježine; nepoznato se prikazuje kao „Nije navedeno” |
-| 🤖 AI po izboru | OpenAI / OpenRouter / lokalna Ollama / **deterministički fallback bez ključa** |
+| 🤖 AI jezgro | Isključivo OpenCode CLI s besplatnim modelima — bez ključeva, bez fallbacka (503 kad je nedostupno) |
 | 🔒 Privatnost | Nema naloga, nema CV-jeva, nema historije pretrage; sirovi upiti se ne logiraju |
 | 🖥️ Dvije platforme | Web (Next.js) + Windows 11 installer (Tauri 2, .msi) na istom API-ju |
 | 🛡️ Sigurnost | SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano |
@@ -71,7 +71,7 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 ```
 ┌──────────────┐      ┌──────────────┐
 │  Next.js web │──────▶              │
-└──────────────┘      │   FastAPI    │──▶ Store: Appwrite REST
+└──────────────┘      │   FastAPI    │──▶ Store: samo memorija (bez baze, bez diska)
 ┌──────────────┐      │   :8010      │    (fallback: lokalni JSON)
 │ Tauri 2 .msi │──────▶              │
 │ Windows 11   │      │ konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje
@@ -124,7 +124,7 @@ cd frontend && npm install && npm run dev
 ### 5. Testovi
 
 ```bash
-cd backend && venv/bin/python -m pytest -q    # 17 testova
+cd backend && venv/bin/python -m pytest -q    # 25 testova
 cd frontend && npm test && npm run build       # 2 testa + build
 ```
 
@@ -185,7 +185,7 @@ Puna tabela s endpointima, poljima i ToS napomenama: [`docs/KONEKTORI.md`](docs/
 
 ## AI pretraga i rangiranje
 
-Upit se **privremeno** analizira (nikad se ne pohranjuje): zanimanje → kategorija, grad/država, plata (KM/BAM/EUR/€/$), remote/hibrid, ugovor, vještine. Redoslijed provajdera (`AI_PROVIDER=auto`): OpenAI → OpenRouter → lokalna Ollama → **deterministički fallback** (uvijek radi, bez ključa). Ključevi ostaju na serveru — nikad u browseru, desktop paketu, logovima ili repozitoriju.
+Upit se **privremeno** analizira (nikad se ne pohranjuje): zanimanje → kategorija, grad/država, plata (KM/BAM/EUR/€/$), remote/hibrid, ugovor, vještine. Jezgro je **OpenCode CLI** (`opencode run`, besplatni modeli, bez `--auto`, u praznom temp direktoriju, s timeoutom): prijava se radi jednom na serveru (`opencode auth login`), **aplikacija ne posjeduje i ne traži API ključeve** — nema ih u browseru, desktop paketu, logovima ni repozitoriju. Modelov JSON je savjet koji validira deterministički parser; svaki neuspjeh CLI-ja vraća iskrenu grešku 503 — nema tihog degradiranja ni alternativnih provajdera.
 
 Signali rangiranja: zanimanje/vještine, lokacija, zahtjevi korisnika, tip zaposlenja, plata (ako je poznata — **oglas bez plate se ne kažnjava**), svježina. Ocjena je procjena relevantnosti, ne garancija zaposlenja. Sadržaj oglasa tretira se kao nepouzdan ulaz (prompt-injection otpornost).
 
@@ -206,9 +206,12 @@ Tajne samo iz environmenta (`.env.example` bez vrijednosti); admin rute iza `X-A
 
 ---
 
-## Appwrite skladištenje
+## Anonimnost: bez perzistencije
 
-Instanca: `https://baza.kolektiv.pro` (v1.8.1). Logičke kolekcije `jobs`, `job_sources`, `scan_runs` (schema: [`appwrite/schema.json`](appwrite/schema.json)); provisioning je idempotentan (`appwrite/migrate.py`, samo stdlib). Pisanje isključivo serverskim ključem minimalnih privilegija — admin ključ nikad ne ide javnom klijentu. Bez kredencijala backend radi na lokalni JSON store. Trenutni status pristupa: [`docs/APPWRITE-SETUP.md`](docs/APPWRITE-SETUP.md).
+v1 je namjerno bez baze i bez snimanja na disk: oglasi iz skeniranja žive samo u memoriji
+procesa, upit se obrađuje privremeno i ne zapisuje se nigdje, a gašenjem aplikacije **svi
+podaci nestaju**. Nema korisničkih kolekcija (ni `users`, `profiles`, `cvs`, `applications`,
+`search_history` — ne kreirati ih), nema historije pretrage, nema tragova na disku.
 
 ---
 
@@ -218,15 +221,15 @@ Tauri 2 omotač oko istog frontenda (`desktop/src-tauri/`): normalna instalacija
 
 ---
 
-## Produkcija (Hestia)
+## Produkcija
 
-Planirana domena: **`https://posao.kolektiv.pro`** (DNS zapis u pripremi). Backend radi samo na `127.0.0.1:8010` iza postojećeg reverse proxyja — interni portovi se ne izlažu javnosti; frontend i `/api/` idu kroz proxy. Systemd servis s ograničenim restartom, health check, log rotacija, backup `backend/data/` + `.env` (van repoa), rollback gašenjem servisa. Datoteke i koraci (uz odobrenje, bez diranja postojećih domena/TLS/firewalla): [`docs/HESTIA-DEPLOY.md`](docs/HESTIA-DEPLOY.md), [`deploy/hestia/`](deploy/hestia/).
+Javna domena: **`https://posao.kolektiv.pro`** (DNS zapis u pripremi). Backend radi samo na `127.0.0.1:8010` iza reverse proxyja — interni portovi se ne izlažu javnosti; frontend i `/api/` idu kroz proxy. Systemd servis s ograničenim restartom, health check, log rotacija, backup `.env` (van repoa — jedina datoteka s tajnama), rollback gašenjem servisa. Datoteke i koraci: [`docs/DEPLOY.md`](docs/DEPLOY.md), [`deploy/linux/`](deploy/linux/).
 
 ---
 
 ## Testiranje
 
-- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, AI fallback, greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **17/17 prolazi.**
+- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI (bez fallbacka: 503), greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **25/25 prolazi.**
 - Frontend: `npm test` (2/2) + `npm run build` (uspješan).
 - CI (GitHub Actions): `tests.yml` na svaki push + secret-scan; `windows-build.yml` ručno/na release.
 - Fixture podaci su jasno označeni testni i nikad se ne prikazuju kao produkcijski oglasi.
@@ -240,13 +243,12 @@ AgentMujoJob/
 ├── backend/app/        # FastAPI: main, config, models, security, store,
 │                       #          normalize, dedup, criteria, ranking,
 │                       #          connectors, ai_providers, admin
-├── backend/tests/      # pytest (17 testova) + jasno označeni fixturei
+├── backend/tests/      # pytest (25 testova) + jasno označeni fixturei
 ├── frontend/           # Next.js 14 + TypeScript (bosanski UI)
 ├── desktop/src-tauri/  # Tauri 2 konfiguracija (Windows .msi)
-├── appwrite/           # schema.json + idempotentna migrate.py
-├── deploy/hestia/      # systemd servis + nginx snippet (posao.kolektiv.pro)
-├── docs/               # ARHITEKTURA, KONEKTORI, APPWRITE-SETUP,
-│                       # HESTIA-DEPLOY, WINDOWS-BUILD, SIGURNOST + index.html
+├── deploy/linux/       # systemd servis + nginx snippet
+├── docs/               # ARHITEKTURA, KONEKTORI, DEPLOY,
+│                       # DEPLOY, WINDOWS-BUILD, SIGURNOST + index.html
 ├── .github/workflows/  # tests.yml, windows-build.yml
 ├── AGENTS.md           # pravila za buduće AI agente
 └── .env.example        # prazan predložak (bez vrijednosti)
@@ -258,8 +260,8 @@ AgentMujoJob/
 
 - ✅ Backend API + web UI implementirani, testirani, rade end-to-end sa stvarnim oglasima.
 - ✅ Javan GitHub repo: `https://github.com/xnet-ba/AgentMujoJob`.
-- ⏳ Appwrite kolekcije: čeka se ključ s pravima (nalog je guest) — radi JSON fallback.
-- ⏳ `posao.kolektiv.pro`: čeka se DNS zapis + Hestia domena/proxy (datoteke spremne).
+- ✅ Anonimnost: nema baze ni snimanja — gašenjem appa svi podaci nestaju.
+- ⏳ `posao.kolektiv.pro`: čeka se DNS zapis + reverse proxy (datoteke spremne).
 - ⏳ Windows `.msi`: pravi se u CI-ju nakon objave (lokalno nema Rust/Windows okruženja).
 - ⏳ BiH konektori: domaći portali ne nude API/RSS — potreban dogovor; verificirani međunarodni kandidati čekaju registraciju.
 - Pravila ponašanja za agente: [`AGENTS.md`](AGENTS.md). Nema izmišljenih podataka, nema tvrdnji bez pokrenutih provjera.

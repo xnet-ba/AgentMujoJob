@@ -46,14 +46,14 @@ a{color:var(--plava)}
 <div class="kartica"><b>🔍 Prirodni jezik</b>Zanimanje, vještine, grad, plata, remote/hibrid, ugovor — iz jedne rečenice.</div>
 <div class="kartica"><b>🏆 Rangiranje 0–100</b>Transparentna ocjena s razlozima za i protiv. Oglas bez plate se ne kažnjava.</div>
 <div class="kartica"><b>🔌 Provjereni izvori</b>Greenhouse API aktivan (1102 oglasa u probnom skenu); EURES, Remotive, RemoteOK i drugi verificirani.</div>
-<div class="kartica"><b>🤖 AI po izboru</b>OpenAI / OpenRouter / lokalna Ollama / deterministički fallback bez ključa.</div>
+<div class="kartica"><b>🤖 AI jezgro</b>Isključivo OpenCode CLI s besplatnim modelima. Bez ključeva, bez fallbacka.</div>
 <div class="kartica"><b>🔒 Privatnost</b>Nema naloga ni CV-jeva. Sirovi upiti se ne logiraju i ne pohranjuju.</div>
-<div class="kartica"><b>🛡️ Sigurnost</b>SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano (17/17).</div>
+<div class="kartica"><b>🛡️ Sigurnost</b>SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano.</div>
 </div></section>
 
 <section class="sekcija"><h2>Kako radi</h2>
 <div class="dijagram">Next.js web ──┐
-               ├──▶ FastAPI :8010 ──▶ Appwrite (fallback: JSON)
+               ├──▶ FastAPI :8010 ──▶ Store: samo memorija (bez baze, bez diska)
 Tauri 2 .msi ──┘     konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje</div></section>
 
 <section class="sekcija"><h2>Brzi start</h2>
@@ -90,8 +90,8 @@ cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3
 <table><tr><th>Stavka</th><th>Stanje</th></tr>
 <tr><td>Backend API + web UI (testirano end-to-end)</td><td class="status-ok">✅ Gotovo</td></tr>
 <tr><td>GitHub repo (javan)</td><td class="status-ok">✅ github.com/xnet-ba/AgentMujoJob</td></tr>
-<tr><td>Appwrite kolekcije</td><td class="status-ceka">⏳ Čeka ključ (nalog je guest) — radi JSON fallback</td></tr>
-<tr><td>posao.kolektiv.pro</td><td class="status-ceka">⏳ Čeka DNS + Hestia domenu</td></tr>
+<tr><td>Anonimnost</td><td class="status-ok">✅ Bez baze i diska — gašenjem sve nestaje</td></tr>
+<tr><td>posao.kolektiv.pro</td><td class="status-ceka">⏳ Čeka DNS + reverse proxy</td></tr>
 <tr><td>Windows .msi installer</td><td class="status-ceka">⏳ Pravi se u CI-ju (windows-latest)</td></tr>
 <tr><td>BiH konektori</td><td class="status-ceka">⏳ Portali bez API/RSS — treba dogovor</td></tr></table></section>
 

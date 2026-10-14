@@ -8,7 +8,8 @@ client = TestClient(app, raise_server_exceptions=False)
 
 
 def setup_function(_):
-    store._write(store.jobs_path, TEST_OGLASI)
+    store.ocisti()
+    store.upsert(TEST_OGLASI)
 
 
 def test_health_bez_tajni():
@@ -24,10 +25,26 @@ def test_jobs_paginacija_i_filter():
     assert r2.json()["rezultati"] == []
 
 
-def test_search_validacija():
+def test_search_validacija(monkeypatch):
     assert client.post("/api/search", json={"upit": "x"}).status_code == 422
+    import app.main as m
+    from app.ai_providers import RezultatAI
+    from app.criteria import parsiraj_kriterije
+    k = parsiraj_kriterije("komercijalist u Tešnju plata 1800 KM")
+    monkeypatch.setattr(m, "tumaci_upit", lambda t: RezultatAI(k, "test", "opencode"))
     r = client.post("/api/search", json={"upit": "komercijalist u Tešnju plata 1800 KM"})
     assert r.status_code == 200 and r.json()["ukupno"] >= 1
+
+
+def test_search_503_bez_ai(monkeypatch):
+    import app.main as m
+    from app.ai_providers import AiNedostupan
+
+    def pad(t):
+        raise AiNedostupan("test")
+    monkeypatch.setattr(m, "tumaci_upit", pad)
+    r = client.post("/api/search", json={"upit": "komercijalist u Tešnju"})
+    assert r.status_code == 503 and "nedostupno" in r.json()["greska"]
 
 
 def test_admin_zasticen():
@@ -37,5 +54,6 @@ def test_admin_zasticen():
 
 def test_neaktivan_oglas_se_ne_vraca():
     rows = [dict(TEST_OGLASI[0], status="neaktivan"), TEST_OGLASI[1]]
-    store._write(store.jobs_path, rows)
+    store.ocisti()
+    store.upsert(rows)
     assert client.get("/api/jobs").json()["ukupno"] == 1

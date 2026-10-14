@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from . import admin, connectors
-from .ai_providers import tumaci_upit
+from .ai_providers import AiNedostupan, tumaci_upit
 from .config import settings
 from .models import Kriteriji, RangiraniOglas, SearchResponse
 from .ranking import rangiraj
@@ -39,7 +39,7 @@ class SearchIn(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "servis": settings.APP_NAME, "appwrite": store.appwrite}
+    return {"status": "ok", "servis": settings.APP_NAME, "perzistencija": "nema (samo memorija)"}
 
 
 @app.get("/api/jobs")
@@ -65,7 +65,10 @@ def detalj_oglasa(job_id: str, request: Request):
 def pretraga(body: SearchIn, request: Request):
     ip = request.client.host if request.client else "x"
     _limit(ai_limiter, f"ai:{ip}", "AI budžet iscrpljen za ovu minutu, pokušajte kasnije.")
-    ai = tumaci_upit(body.upit)
+    try:
+        ai = tumaci_upit(body.upit)
+    except AiNedostupan as e:
+        raise HTTPException(503, f"AI jezgro trenutno nedostupno: {e}")
     k: Kriteriji = ai.kriteriji
     if body.geo_prioritet:
         doz = {"bih", "balkan", "europa", "svijet"}
@@ -108,11 +111,14 @@ def admin_sken(request: Request, x_admin_token: str | None = Header(default=None
 @app.get("/api/admin/status")
 def admin_status(x_admin_token: str | None = Header(default=None)):
     _admin_ok(x_admin_token)
-    return {"appwrite": store.appwrite, "izvori": list(connectors.REGISTAR.keys())}
+    return {"izvori": list(connectors.REGISTAR.keys())}
+
+
+@app.exception_handler(HTTPException)
+def _http_greska(request: Request, exc: HTTPException):
+    return JSONResponse({"greska": exc.detail}, status_code=exc.status_code)
 
 
 @app.exception_handler(Exception)
 def _greska(request: Request, exc: Exception):
-    if isinstance(exc, HTTPException):
-        return JSONResponse({"greska": exc.detail}, status_code=exc.status_code)
     return JSONResponse({"greska": "Interna greška."}, status_code=500)  # bez stack tracea klijentu

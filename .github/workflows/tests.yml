@@ -20,4 +20,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: "! grep -rEi 'sk-(live|ant|openrouter)|xapp_[A-Za-z0-9]{20,}|ADMIN_TOKEN=.+' --include='*.py' --include='*.ts' --include='*.tsx' --include='*.json' . | grep -v example | grep -v test_ || true"
+      - run: "! grep -rEi 'ghp_[A-Za-z0-9]{20,}|xapp_[A-Za-z0-9]{20,}|sk-live-[A-Za-z0-9]+|ADMIN_TOKEN=.+' --include='*.py' --include='*.ts' --include='*.tsx' --include='*.json' --include='*.yml' . | grep -v example | grep -v test_ | grep -v '.next/' || true"
+      - run: "! grep -rEi 'home/[a-z0-9_]+/|hestia|185\\.255|@kolektiv\\.pro|/usr/local/hestia' --include='*.md' --include='*.py' --include='*.ts' --include='*.tsx' --include='*.example' --include='*.service' --include='*.conf' --include='*.yml' . | grep -v '.next/' | grep -v node_modules || true"

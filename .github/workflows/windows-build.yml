@@ -8,8 +8,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - uses: dtolnay/rust-toolchain@stable
-      - run: cd frontend && npm ci && npm run build
-        env: { TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" }
+      - run: cd frontend && npm ci && npm run build:export
+        env: { NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" }
       - uses: tauri-apps/tauri-action@v0
         with: { projectPath: desktop }
       - uses: actions/upload-artifact@v4

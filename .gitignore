@@ -7,6 +7,7 @@ backend/data/
 node_modules/
 frontend/.next/
 frontend/out/
+frontend/.tauri-export
 desktop/src-tauri/target/
 *.msi
 *.exe

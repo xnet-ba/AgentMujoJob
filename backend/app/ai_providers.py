@@ -19,15 +19,57 @@ from .config import settings
 from .criteria import parsiraj_kriterije
 from .models import Kriteriji
 
-_JSON_BLok = re.compile(r"\{.*\}", re.DOTALL)
+_JSON_BLok = re.compile(r"\{[^{}]*\}")
+
+POZNATI_KLJUCEVI = {"zanimanje", "grad", "drzava", "remote", "plata_min", "plata_valuta", "vrsta_ugovora"}
 
 PROMPT = (
-    "Izvuci kriterije za pretragu posla iz upita ispod i odgovori ISKLJUČIVO "
-    "jednim JSON objektom bez ikakvog drugog teksta, alata ili formata. "
+    "Tvoj jedini zadatak: iz upita ispod izvuci kriterije za pretragu posla. "
+    "Ne pretražuj ništa, ne pozivaj alate, ne izvršavaj komande, ne objašnjavaj. "
+    "Odgovori ISKLJUČIVO jednim JSON objektom, bez ikakvog drugog teksta. "
     "Ključevi (svi opcionalni): zanimanje, grad, drzava, remote (true/false), "
-    "plata_min (broj), plata_valuta (BAM/EUR/USD), vrsta_ugovora. "
-    "Ne koristi nikakve alate — samo odgovori.\n\nUpit: "
+    "plata_min (broj), plata_valuta (BAM/EUR/USD), vrsta_ugovora.\n\nUpit: "
 )
+
+
+def _izvuci_tekst_iz_eventa(stdout: str) -> str:
+    """`opencode run --format json` vraća JSON evente po linijama; tekst je u text poljima."""
+    dijelovi: list[str] = []
+
+    def _hodaj(o) -> None:
+        if isinstance(o, dict):
+            t = o.get("text")
+            if isinstance(t, str):
+                dijelovi.append(t)
+            for v in o.values():
+                _hodaj(v)
+        elif isinstance(o, list):
+            for v in o:
+                _hodaj(v)
+
+    for lin in stdout.splitlines():
+        lin = lin.strip()
+        if not lin.startswith("{"):
+            if lin:
+                dijelovi.append(lin)
+            continue
+        try:
+            _hodaj(json.loads(lin))
+        except json.JSONDecodeError:
+            continue
+    return "".join(dijelovi)
+
+
+def _izvuci_kriterije_json(tekst: str) -> dict:
+    """Zadnji parsabilni JSON blok s poznatim ključevima — modelov savjet, ne istina."""
+    for m in reversed(list(_JSON_BLok.finditer(tekst))):
+        try:
+            podaci = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(podaci, dict) and POZNATI_KLJUCEVI & set(podaci.keys()):
+            return podaci
+    raise AiNedostupan("OpenCode CLI vratio odgovor bez strukturiranih kriterija.")
 
 
 class AiNedostupan(Exception):
@@ -82,11 +124,5 @@ def tumaci_upit(tekst: str) -> RezultatAI:
         raise AiNedostupan(f"OpenCode CLI se nije izvršio: {e}"[:200]) from e
     if p.returncode != 0 or not p.stdout.strip():
         raise AiNedostupan("OpenCode CLI nije vratio odgovor (provjeriti `opencode auth login`).")
-    m = _JSON_BLok.search(p.stdout)
-    if not m:
-        raise AiNedostupan("OpenCode CLI vratio odgovor bez strukturiranih kriterija.")
-    try:
-        _primijeni_model(k, json.loads(m.group(0)))
-    except (json.JSONDecodeError, AttributeError) as e:
-        raise AiNedostupan("OpenCode CLI vratio neispravan JSON.") from e
+    _primijeni_model(k, _izvuci_kriterije_json(_izvuci_tekst_iz_eventa(p.stdout)))
     return RezultatAI(k, "OpenCode CLI tumačenje + deterministička validacija.", "opencode")

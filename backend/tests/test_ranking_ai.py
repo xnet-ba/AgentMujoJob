@@ -32,12 +32,17 @@ def test_ai_bez_cli_baca():
         shutil.which = orig
 
 
+def _event_sa_tekstom(tekst: str) -> str:
+    import json as _j
+    return _j.dumps({"type": "text", "part": {"type": "text", "text": tekst}})
+
+
 def test_ai_opencode_json_spaja_s_parserom(monkeypatch):
     monkeypatch.setattr("shutil.which", lambda *a, **k: "/usr/bin/opencode")
 
     class P:
         returncode = 0
-        stdout = 'neki tekst {"grad": "Mostar", "plata_min": 2000, "plata_valuta": "BAM"} kraj'
+        stdout = _event_sa_tekstom('neki tekst {"grad": "Mostar", "plata_min": 2000, "plata_valuta": "BAM"} kraj')
 
     monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: P())
     r = tumaci_upit("posao u Mostaru plata 2000 KM")
@@ -57,7 +62,7 @@ def test_ai_los_json_baca(monkeypatch):
 
     class P:
         returncode = 0
-        stdout = "samo tekst bez ikakvog jsona"
+        stdout = _event_sa_tekstom("samo tekst bez ikakvog jsona")
 
     monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: P())
     with pytest.raises(AiNedostupan):

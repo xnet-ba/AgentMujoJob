@@ -1,1 +1,39 @@
-{"$schema": "https://schema.tauri.app/config/2", "productName": "AgentMujoJob", "version": "1.0.0", "identifier": "pro.kolektiv.agentmujojob", "build": {"frontendDist": "../frontend/out", "devUrl": "http://localhost:3000", "beforeDevCommand": "npm run dev --prefix ../frontend"}, "app": {"windows": [{"title": "AgentMujoJob", "width": 1100, "height": 750}], "security": {"csp": "default-src 'self'; connect-src 'self' https: http://127.0.0.1:*; img-src 'self' data: https:"}}, "bundle": {"active": true, "targets": ["msi", "nsis"], "icon": ["icons/icon.ico", "icons/icon.png"], "category": "Utility", "shortDescription": "AI asistent za pronalazak posla", "windows": {"certificateThumbprint": null}}
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AgentMujoJob",
+  "version": "1.0.0",
+  "identifier": "pro.kolektiv.agentmujojob",
+  "build": {
+    "frontendDist": "../frontend/out",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev --prefix ../frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AgentMujoJob",
+        "width": 1100,
+        "height": 750
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' https: http://127.0.0.1:*; img-src 'self' data: https:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "msi",
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "category": "Utility",
+    "shortDescription": "AI asistent za pronalazak posla",
+    "windows": {
+      "certificateThumbprint": null
+    }
+  }
+}

@@ -1,5 +1,10 @@
 # Produkcijski deploy (Linux, systemd + nginx reverse proxy)
 
+Status referentne instalacije (2026-10-14): `https://posao.kolektiv.pro` **uživo** —
+DNS + web domena + Let's Encrypt + proxy template (`agentmujojob`, `/api/` → :8010, `/` → :3000),
+backend kao systemd servis, frontend kao PM2 proces, skeniranje (~1700 oglasa) i AI pretraga
+verificirani end-to-end kroz https. Ispod je reproducibilni postupak.
+
 Backend sluša samo `127.0.0.1:8010`, frontend samo `127.0.0.1:3000`; javnosti se
 ne izlažu interni portovi. Potrebna je javna domena s TLS certifikatom.
 

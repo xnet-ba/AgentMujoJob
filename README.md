@@ -261,7 +261,7 @@ AgentMujoJob/
 - ✅ Backend API + web UI implementirani, testirani, rade end-to-end sa stvarnim oglasima.
 - ✅ Javan GitHub repo: `https://github.com/xnet-ba/AgentMujoJob`.
 - ✅ Anonimnost: nema baze ni snimanja — gašenjem appa svi podaci nestaju.
-- ⏳ `posao.kolektiv.pro`: čeka se DNS zapis + reverse proxy (datoteke spremne).
+- ✅ `https://posao.kolektiv.pro` uživo: web + `/api/*` kroz reverse proxy s TLS-om, backend systemd, frontend PM2, skeniranje i AI pretraga verificirani end-to-end.
 - ⏳ Windows `.msi`: pravi se u CI-ju nakon objave (lokalno nema Rust/Windows okruženja).
 - ⏳ BiH konektori: domaći portali ne nude API/RSS — potreban dogovor; verificirani međunarodni kandidati čekaju registraciju.
 - Pravila ponašanja za agente: [`AGENTS.md`](AGENTS.md). Nema izmišljenih podataka, nema tvrdnji bez pokrenutih provjera.

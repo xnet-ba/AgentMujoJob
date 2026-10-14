@@ -14,13 +14,14 @@ const outIndex = path.join(frontend, "out", "index.html");
 
 try {
   fs.writeFileSync(flag, "x");
-  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-  const r = spawnSync(npm, ["run", "build"], {
+  const win = process.platform === "win32";
+  const r = spawnSync(win ? "npm.cmd" : "npm", ["run", "build"], {
     cwd: frontend,
     stdio: "inherit",
-    shell: false,
+    shell: win, // .cmd/.bat se na Windowsu izvršavaju samo kroz shell
     env: { ...process.env, TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" },
   });
+  if (r.error) throw new Error("spawn neuspješan: " + r.error.message);
   if (r.status !== 0) throw new Error("next build pao s kodom " + r.status);
   if (!fs.existsSync(outIndex)) throw new Error("nema frontend/out/index.html — export nije uspio");
   console.log("tauri-export-build: OK", outIndex);

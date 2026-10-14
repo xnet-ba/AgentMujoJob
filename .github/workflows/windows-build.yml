@@ -11,7 +11,6 @@ jobs:
       - run: cd frontend && npm ci && npm run build
         env: { TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" }
       - uses: tauri-apps/tauri-action@v0
-        env: { TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" }
         with: { projectPath: desktop }
       - uses: actions/upload-artifact@v4
         with: { name: AgentMujoJob-windows, path: "desktop/src-tauri/target/release/bundle/**/*.msi" }

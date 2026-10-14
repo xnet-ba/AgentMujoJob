@@ -10,7 +10,8 @@ const outIndex = path.join(frontend, "out", "index.html");
 try {
   fs.writeFileSync(flag, "x");
   const win = process.platform === "win32";
-  const npmBin = win ? path.join(process.envProgramFiles, "npm", "npm.cmd") : "npm";
+  const progFiles = win ? (process.envProgramFiles || "C:\\\\Program Files") : undefined;
+  const npmBin = win ? path.join(progFiles, "npm", "npm.cmd") : "npm";
   const r = spawnSync(npmBin, ["run", "build"], {
     cwd: frontend,
     stdio: "inherit",

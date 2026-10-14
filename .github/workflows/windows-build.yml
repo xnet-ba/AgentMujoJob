@@ -1,16 +1,26 @@
-name: windows-build
-on: { workflow_dispatch: {}, release: { types: [published] } }
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - uses: dtolnay/rust-toolchain@stable
+        with:
+          node-version: '22'
       - run: npm --prefix frontend ci
+      - run: Remove-Item -Path frontend/out -Force -ErrorAction SilentlyContinue
       - run: node scripts/tauri-export-build.js
-      - uses: tauri-apps/tauri-action@v0
-        with: { projectPath: desktop }
-      - uses: actions/upload-artifact@v4
-        with: { name: AgentMujoJob-windows, path: "desktop/src-tauri/target/release/bundle/**/*.msi" }
+      - run: tauri-apps/tauri-action@v0
+        env:
+          TAURI_BUILD: '1'
+          NEXT_PUBLIC_API_URL: 'https://posao.kolektiv.pro'

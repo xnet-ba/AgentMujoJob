@@ -9,10 +9,12 @@ const outIndex = path.join(frontend, "out", "index.html");
 
 try {
   fs.writeFileSync(flag, "x");
-  const r = spawnSync("npm.cmd", ["run", "build"], {
+  const win = process.platform === "win32";
+  const npmBin = win ? path.join(process.envProgramFiles, "npm", "npm.cmd") : "npm";
+  const r = spawnSync(npmBin, ["run", "build"], {
     cwd: frontend,
     stdio: "inherit",
-    shell: true,
+    shell: win,
     env: { ...process.env, TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" },
   });
   if (r.status !== 0) throw new Error("next build failed with code " + r.status);

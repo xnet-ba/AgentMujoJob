@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentMujoJob — Pronađi posao koji ti odgovara</title>
+<style>
+:root{--plava:#0b5fff;--tamna:#0e1b33;--siva:#5b6577;--pozadina:#f4f6fa;--kartica:#ffffff;--zelena:#0e9f6e;--zuta:#c27803;--crvena:#c81e1e;--radius:14px}
+*{box-sizing:border-box}body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;margin:0;background:var(--pozadina);color:#1a2333;line-height:1.65}
+.hero{background:linear-gradient(135deg,#0e1b33 0%,#123a8f 60%,#0b5fff 100%);color:#fff;padding:4rem 1.5rem 3rem;text-align:center}
+.hero h1{font-size:2.6rem;margin:0 0 .4rem}.hero p.pod{font-size:1.2rem;opacity:.92;margin:.2rem 0 1.2rem}
+.bedzevi{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+.bedz{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:.25rem .9rem;font-size:.85rem}
+.omjer{max-width:1020px;margin:0 auto;padding:0 1.2rem 3rem}
+.sekcija{background:var(--kartica);border-radius:var(--radius);padding:1.8rem 2rem;margin-top:1.4rem;box-shadow:0 2px 10px rgba(14,27,51,.07)}
+h2{color:var(--tamna);border-bottom:3px solid var(--plava);display:inline-block;padding-bottom:.2rem;margin-top:0}
+.mreza{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin-top:1rem}
+.kartica{background:#f8faff;border:1px solid #dbe6ff;border-radius:12px;padding:1rem 1.1rem}
+.kartica b{display:block;margin-bottom:.3rem}
+table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.93rem}
+th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid #e3e9f2;vertical-align:top}
+th{background:#eef3ff;color:var(--tamna)}
+code{background:#eef1f6;padding:.1rem .4rem;border-radius:6px;font-size:.88em}
+pre{background:#0e1b33;color:#d7e3ff;padding:1rem 1.2rem;border-radius:12px;overflow-x:auto;font-size:.86rem}
+.status-ok{color:var(--zelena);font-weight:700}.status-ceka{color:var(--zuta);font-weight:700}.status-ne{color:var(--crvena);font-weight:700}
+.dijagram{background:#0e1b33;color:#d7e3ff;border-radius:12px;padding:1.1rem 1.3rem;font-family:Consolas,monospace;font-size:.85rem;white-space:pre;overflow-x:auto}
+.podnozje{text-align:center;color:var(--siva);padding:2rem 1rem;font-size:.9rem}
+a{color:var(--plava)}
+@media(max-width:600px){.hero h1{font-size:1.8rem}.sekcija{padding:1.2rem}}
+</style>
+</head>
+<body>
+<header class="hero">
+<h1>AgentMujoJob</h1>
+<p class="pod"><strong>Pronađi posao koji ti odgovara.</strong><br>Pretraži oglase u BiH, regionu i svijetu uz pomoć AI asistenta.</p>
+<div class="bedzevi"><span class="bedz">Open-source • MIT</span><span class="bedz">FastAPI • Python 3.12</span><span class="bedz">Next.js 14 • TypeScript</span><span class="bedz">Tauri 2 • Windows 11</span><span class="bedz">Bosanski • ijekavica</span></div>
+</header>
+<main class="omjer">
+
+<section class="sekcija"><h2>Šta je AgentMujoJob</h2>
+<p>Besplatan AI asistent za pronalazak posla: pretražuje oglase iz više izvora, razumije upite na prirodnom jeziku (npr. <em>„Terenski komercijalist u Tešnju, plata najmanje 1.800 KM”</em>), rangira rezultate po relevantnosti s obrazloženjem i vodi direktno na <strong>originalni oglas</strong>. Bez registracije, bez CV-jeva, bez historije pretrage — po dizajnu.</p>
+<p>Geografski prioritet (promjenjiv): <strong>1. BiH → 2. Balkan → 3. Evropa → 4. svijet + remote</strong>. Dostupno kao web aplikacija i Windows 11 desktop aplikacija na istom backendu.</p></section>
+
+<section class="sekcija"><h2>Ključne karakteristike</h2>
+<div class="mreza">
+<div class="kartica"><b>🔍 Prirodni jezik</b>Zanimanje, vještine, grad, plata, remote/hibrid, ugovor — iz jedne rečenice.</div>
+<div class="kartica"><b>🏆 Rangiranje 0–100</b>Transparentna ocjena s razlozima za i protiv. Oglas bez plate se ne kažnjava.</div>
+<div class="kartica"><b>🔌 Provjereni izvori</b>Greenhouse API aktivan (1102 oglasa u probnom skenu); EURES, Remotive, RemoteOK i drugi verificirani.</div>
+<div class="kartica"><b>🤖 AI po izboru</b>OpenAI / OpenRouter / lokalna Ollama / deterministički fallback bez ključa.</div>
+<div class="kartica"><b>🔒 Privatnost</b>Nema naloga ni CV-jeva. Sirovi upiti se ne logiraju i ne pohranjuju.</div>
+<div class="kartica"><b>🛡️ Sigurnost</b>SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano (17/17).</div>
+</div></section>
+
+<section class="sekcija"><h2>Kako radi</h2>
+<div class="dijagram">Next.js web ──┐
+               ├──▶ FastAPI :8010 ──▶ Appwrite (fallback: JSON)
+Tauri 2 .msi ──┘     konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje</div></section>
+
+<section class="sekcija"><h2>Brzi start</h2>
+<pre>cd backend
+python3 -m venv venv &amp;&amp; venv/bin/pip install -r requirements.txt
+cp ../.env.example .env   # unesi jak ADMIN_TOKEN
+venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010
+
+# probni sken (stvarni oglasi):
+curl -X POST 127.0.0.1:8010/api/admin/scan -H "X-Admin-Token: TVOJ_TOKEN"
+
+# frontend:
+cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3000</pre></section>
+
+<section class="sekcija"><h2>API</h2>
+<table><tr><th>Metoda</th><th>Ruta</th><th>Opis</th></tr>
+<tr><td><code>GET</code></td><td><code>/api/health</code></td><td>Stanje servisa (bez tajni)</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/jobs</code></td><td>Pretraga + filteri + paginacija</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/jobs/{id}</code></td><td>Detalji oglasa</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/search</code></td><td>Prirodni jezik → rangirani rezultati</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/sources*</code></td><td>Javni sažetak i status izvora</td></tr>
+<tr><td><code>POST/GET</code></td><td><code>/api/admin/*</code></td><td>Skeniranje i status (X-Admin-Token)</td></tr></table>
+<p>Interaktivna dokumentacija: <code>/docs</code> na backendu.</p></section>
+
+<section class="sekcija"><h2>Izvori oglasa</h2>
+<table><tr><th>Izvor</th><th>Obuhvat</th><th>Status</th></tr>
+<tr><td>Greenhouse boards API</td><td>Evropa + remote</td><td class="status-ok">✅ Aktivan (1102/375)</td></tr>
+<tr><td>EURES (EU)</td><td>31 država</td><td class="status-ok">✅ Verificiran (~2,6M)</td></tr>
+<tr><td>Remotive / RemoteOK</td><td>svijet-remote</td><td class="status-ok">✅ Verificirani</td></tr>
+<tr><td>Arbeitnow / WWR / JobTech / Ashby / Posao.hr</td><td>EU / remote / HR</td><td class="status-ok">✅ Verificirani</td></tr>
+<tr><td>BiH portali (mojposao.ba, boljiposao.com, posao.ba, zavodi)</td><td>BiH</td><td class="status-ne">❌ Nude ni API ni RSS — treba dogovor</td></tr></table></section>
+
+<section class="sekcija"><h2>Status projekta</h2>
+<table><tr><th>Stavka</th><th>Stanje</th></tr>
+<tr><td>Backend API + web UI (testirano end-to-end)</td><td class="status-ok">✅ Gotovo</td></tr>
+<tr><td>GitHub repo (javan)</td><td class="status-ok">✅ github.com/xnet-ba/AgentMujoJob</td></tr>
+<tr><td>Appwrite kolekcije</td><td class="status-ceka">⏳ Čeka ključ (nalog je guest) — radi JSON fallback</td></tr>
+<tr><td>posao.kolektiv.pro</td><td class="status-ceka">⏳ Čeka DNS + Hestia domenu</td></tr>
+<tr><td>Windows .msi installer</td><td class="status-ceka">⏳ Pravi se u CI-ju (windows-latest)</td></tr>
+<tr><td>BiH konektori</td><td class="status-ceka">⏳ Portali bez API/RSS — treba dogovor</td></tr></table></section>
+
+<section class="sekcija"><h2>Linkovi</h2>
+<p>🌐 Repo: <a href="https://github.com/xnet-ba/AgentMujoJob">github.com/xnet-ba/AgentMujoJob</a> •
+📖 Puni README: <a href="https://github.com/xnet-ba/AgentMujoJob/blob/main/README.md">README.md</a> •
+🤖 Pravila za agente: <a href="https://github.com/xnet-ba/AgentMujoJob/blob/main/AGENTS.md">AGENTS.md</a></p>
+<p>Licenca MIT • Bez izmišljenih oglasa • Bez praćenja korisnika</p></section>
+
+</main>
+<footer class="podnozje">AgentMujoJob — open-source AI asistent za pronalazak posla • 2026</footer>
+</body>
+</html>

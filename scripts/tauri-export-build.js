@@ -14,7 +14,8 @@ const outIndex = path.join(frontend, "out", "index.html");
 
 try {
   fs.writeFileSync(flag, "x");
-  const r = spawnSync("npm", ["run", "build"], {
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  const r = spawnSync(npm, ["run", "build"], {
     cwd: frontend,
     stdio: "inherit",
     shell: false,

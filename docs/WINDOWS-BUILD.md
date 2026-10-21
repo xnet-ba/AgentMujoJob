@@ -23,7 +23,7 @@ Binarni fajlovi se ne commit-uju (`.gitignore`), samo `.gitkeep`.
 - Backend se gasi pri izlasku aplikacije (`RunEvent::Exit`).
 - Frontend pri otvaranju polluje `/api/health` dok servis ne proradi; do tada je
   dugme onemogućeno („Pokrećem servis…").
-- AI radi bez prijave: podrazumijevani `opencode/deepseek-v4.1-flash-free` je
+- AI radi bez prijave: podrazumijevani `opencode/minimax-m3.1-flash-free` je
   besplatni OpenCode Zen model (bez računa, bez ključa). Ako model nije dostupan,
   pretraga se izvodi lokalnim parserom ključnih riječi i to navodi u `ai_napomena`.
 

@@ -124,16 +124,21 @@ def tumaci_upit(tekst: str) -> RezultatAI:
     binarka = shutil.which(settings.OPENCODE_BIN)
     if not binarka:
         raise AiNedostupan("AI model nije dostupan (OpenCode CLI nije pronađen).")
-    cmd = [binarka, "run", "--format", "json", "--pure"]
-    if settings.OPENCODE_MODEL:
-        cmd += ["-m", settings.OPENCODE_MODEL]
-    cmd += [PROMPT + tekst[:1000]]
+    def _komanda(model: str) -> list[str]:
+        c = [binarka, "run", "--format", "json", "--pure"]
+        if model:
+            c += ["-m", model]
+        return c + [PROMPT + tekst[:1000]]
+
+    modeli = [settings.OPENCODE_MODEL]
+    if settings.OPENCODE_MODEL_REZERVA and settings.OPENCODE_MODEL_REZERVA != settings.OPENCODE_MODEL:
+        modeli.append(settings.OPENCODE_MODEL_REZERVA)
 
     razlog = "model nije odgovorio"
-    for _ in range(2):
+    for model in modeli:
         pocetak = time.monotonic()
         try:
-            p = _pokreni_cli(cmd)
+            p = _pokreni_cli(_komanda(model))
         except subprocess.TimeoutExpired:
             razlog = "model nije odgovorio u roku"
             break

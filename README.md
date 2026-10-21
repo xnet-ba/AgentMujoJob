@@ -13,6 +13,8 @@ Open-source AI asistent za pronalazak posla — **lokalno na Windowsu 11**. Jeda
 
 > **HTML verzija ovog dokumenta:** [`docs/index.html`](docs/index.html) — isti sadržaj u profesionalnom formatu za pregled u browseru.
 
+![AgentMujoJob — pretraga kuhara u Sarajevu](docs/screenshot.png)
+
 ---
 
 ## Sadržaj
@@ -185,7 +187,7 @@ Svaki konektor ima: timeout 12s, limit veličine odgovora, SSRF provjeru, umjere
 | `posao-hr-rss` | RSS | Hrvatska | ✅ 30 oglasa |
 | `wwr-rss` | RSS | svijet-remote | ✅ 92 oglasa |
 
-Ukupan sken svih izvora: **1244 jedinstvena oglasa za ~30 s** (dedup radi; pokreće se u pozadini pri startu).
+Ukupan sken svih izvora: **~1240 jedinstvenih oglasa za ~30 s** (broj varira sa izvorima) (dedup radi; pokreće se u pozadini pri startu).
 
 ### Provjereno i odbijeno (nije uključeno)
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import time
 import subprocess
 import tempfile
 
@@ -107,23 +108,42 @@ def _primijeni_model(k: Kriteriji, podaci: dict) -> None:
         k.vrsta_ugovora = podaci["vrsta_ugovora"].strip()[:40]
 
 
+def _pokreni_cli(cmd: list[str]):
+    with tempfile.TemporaryDirectory(prefix="amj-ai-") as tmp:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=settings.OPENCODE_TIMEOUT,
+                              stdin=subprocess.DEVNULL, cwd=tmp)
+
+
 def tumaci_upit(tekst: str) -> RezultatAI:
-    """Jedini AI put. Baca AiNedostupan umjesto bilo kakvog fallbacka."""
+    """Jedini AI put. Baca AiNedostupan umjesto bilo kakvog fallbacka.
+
+    Besplatni modeli su povremeno nedostupni; jedan brzi ponovni pokušaj pokriva
+    taj slučaj, a poruka nikad ne sadrži putanje ni internu komandu (ide u UI).
+    """
     k = parsiraj_kriterije(tekst)
     binarka = shutil.which(settings.OPENCODE_BIN)
     if not binarka:
-        raise AiNedostupan("OpenCode CLI nije instaliran (OPENCODE_BIN).")
+        raise AiNedostupan("AI model nije dostupan (OpenCode CLI nije pronađen).")
     cmd = [binarka, "run", "--format", "json", "--pure"]
     if settings.OPENCODE_MODEL:
         cmd += ["-m", settings.OPENCODE_MODEL]
     cmd += [PROMPT + tekst[:1000]]
-    try:
-        with tempfile.TemporaryDirectory(prefix="amj-ai-") as tmp:
-            p = subprocess.run(cmd, capture_output=True, text=True, timeout=settings.OPENCODE_TIMEOUT,
-                               stdin=subprocess.DEVNULL, cwd=tmp)
-    except Exception as e:
-        raise AiNedostupan(f"OpenCode CLI se nije izvršio: {e}"[:200]) from e
-    if p.returncode != 0 or not p.stdout.strip():
-        raise AiNedostupan("OpenCode CLI nije vratio odgovor (provjeriti mrežu i OPENCODE_MODEL).")
-    _primijeni_model(k, _izvuci_kriterije_json(_izvuci_tekst_iz_eventa(p.stdout)))
-    return RezultatAI(k, "OpenCode CLI tumačenje + deterministička validacija.", "opencode")
+
+    razlog = "model nije odgovorio"
+    for _ in range(2):
+        pocetak = time.monotonic()
+        try:
+            p = _pokreni_cli(cmd)
+        except subprocess.TimeoutExpired:
+            razlog = "model nije odgovorio u roku"
+            break
+        except OSError:
+            razlog = "model se nije mogao pokrenuti"
+            break
+        if p.returncode == 0 and p.stdout.strip():
+            _primijeni_model(k, _izvuci_kriterije_json(_izvuci_tekst_iz_eventa(p.stdout)))
+            return RezultatAI(k, "OpenCode CLI tumačenje + deterministička validacija.", "opencode")
+        razlog = "model je vratio prazan odgovor"
+        if time.monotonic() - pocetak > 15:
+            break  # spor neuspjeh: ponovni pokušaj bi samo udvostručio čekanje
+    raise AiNedostupan(razlog)

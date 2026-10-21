@@ -67,3 +67,32 @@ def test_ai_los_json_baca(monkeypatch):
     monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: P())
     with pytest.raises(AiNedostupan):
         tumaci_upit("posao kuhara u Sarajevu")
+
+
+def test_ai_jednom_ponovi_brzi_neuspjeh(monkeypatch):
+    monkeypatch.setattr("shutil.which", lambda *a, **k: "/usr/bin/opencode")
+
+    class Los:
+        returncode = 1
+        stdout = ""
+
+    class Dobar:
+        returncode = 0
+        stdout = _event_sa_tekstom('{"grad": "Tuzla"}')
+
+    pozivi = []
+    def lazni_run(*a, **k):
+        pozivi.append(1)
+        return Los() if len(pozivi) == 1 else Dobar()
+
+    monkeypatch.setattr(ap.subprocess, "run", lazni_run)
+    r = tumaci_upit("posao u Tuzli")
+    assert len(pozivi) == 2 and r.kriteriji.grad == "Tuzla"
+
+
+def test_ai_poruka_ne_otkriva_putanje(monkeypatch):
+    monkeypatch.setattr("shutil.which", lambda *a, **k: "/usr/bin/opencode")
+    monkeypatch.setattr(ap.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(OSError("/tajna/putanja")))
+    with pytest.raises(AiNedostupan) as ei:
+        tumaci_upit("posao kuhara")
+    assert "/tajna" not in str(ei.value) and "Command" not in str(ei.value)

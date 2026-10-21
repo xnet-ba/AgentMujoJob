@@ -52,6 +52,13 @@ class Store:
         start = (max(1, stranica) - 1) * po_stranici
         return rows[start:start + po_stranici], ukupno
 
+    def broj_po_izvoru(self) -> dict[str, int]:
+        brojevi: dict[str, int] = {}
+        for o in self.svi():
+            izvor = o.get("izvor") or "nepoznato"
+            brojevi[izvor] = brojevi.get(izvor, 0) + 1
+        return brojevi
+
     def detalji(self, job_id: str) -> dict | None:
         return self._oglasi.get(job_id)
 

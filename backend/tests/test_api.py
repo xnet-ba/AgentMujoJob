@@ -50,6 +50,12 @@ def test_search_bez_ai_koristi_kljucne_rijeci(monkeypatch):
     assert d["ukupno"] >= 1
 
 
+def test_izvori_vracaju_naziv_i_broj_oglasa():
+    d = client.get("/api/sources").json()
+    assert len(d) == 10 and all({"id", "naziv", "obuhvat", "oglasa"} <= set(i) for i in d)
+    assert all(isinstance(i["oglasa"], int) and i["oglasa"] >= 0 for i in d)
+
+
 def test_admin_zasticen():
     assert client.post("/api/admin/scan").status_code == 401
     assert client.get("/api/admin/status").status_code == 401

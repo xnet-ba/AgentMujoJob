@@ -108,9 +108,11 @@ def pretraga(body: SearchIn, request: Request):
 
 @app.get("/api/sources")
 def izvori():
+    brojevi = store.broj_po_izvoru()
     return [{"id": cid, **connectors.META_IZVORA.get(cid, {"url": "", "pristup": "javan"}),
              "naziv": getattr(connectors.REGISTAR[cid], "naziv", cid),
-             "obuhvat": getattr(connectors.REGISTAR[cid], "obuhvat", "")} for cid in connectors.REGISTAR]
+             "obuhvat": getattr(connectors.REGISTAR[cid], "obuhvat", ""),
+             "oglasa": brojevi.get(cid, 0)} for cid in connectors.REGISTAR]
 
 
 @app.get("/api/sources/health")

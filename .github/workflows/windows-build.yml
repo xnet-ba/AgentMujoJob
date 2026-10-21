@@ -15,16 +15,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
-      - run: npm --prefix frontend ci
-      - run: node scripts/tauri-export-build.js
+
+      - name: Frontend zavisnosti
+        run: npm --prefix frontend ci
+      - name: Frontend export
+        run: node scripts/tauri-export-build.js
         env:
           NEXT_PUBLIC_API_URL: 'http://127.0.0.1:8010'
+
+      - name: Backend sidecar (PyInstaller)
+        run: |
+          pip install -r backend/requirements.txt pyinstaller
+          python scripts/build-backend-sidecar.py
+
+      # Pinovana verzija OpenCode CLI-ja; mijenjati zajedno sa testom AI puta.
+      - name: OpenCode CLI sidecar
+        run: |
+          $url = "https://github.com/anomalyco/opencode/releases/download/v1.19.3/opencode-windows-x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile opencode.zip
+          Expand-Archive opencode.zip -DestinationPath opencode-tmp -Force
+          $exe = Get-ChildItem opencode-tmp -Recurse -Filter opencode.exe | Select-Object -First 1
+          if (-not $exe) { throw "opencode.exe nije pronađen u arhivi" }
+          Copy-Item $exe.FullName desktop/src-tauri/binaries/opencode.exe
+          Get-ChildItem desktop/src-tauri/binaries
+
       - uses: tauri-apps/tauri-action@v0
         with:
           projectPath: desktop
         env:
           TAURI_BUILD: '1'
+
       - uses: actions/upload-artifact@v4
         with:
           name: agentmujojob-windows

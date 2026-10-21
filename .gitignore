@@ -14,3 +14,8 @@ desktop/src-tauri/target/
 dist/
 .coverage
 .pytest_cache/
+
+# Bundlani sidecari (grade se u CI-ju)
+desktop/src-tauri/binaries/*
+!desktop/src-tauri/binaries/.gitkeep
+build-sidecar/

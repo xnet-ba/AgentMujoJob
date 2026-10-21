@@ -1,21 +1,33 @@
 """AgentMujoJob backend API. Sirovi upiti se ne logiraju — samo duljina i broj rezultata."""
 from __future__ import annotations
 
+import threading
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from . import admin, connectors
-from .ai_providers import AiNedostupan, tumaci_upit
+from .ai_providers import AiNedostupan, RezultatAI, tumaci_upit
 from .config import settings
+from .criteria import parsiraj_kriterije
 from .models import Kriteriji, RangiraniOglas, SearchResponse
 from .ranking import rangiraj
 from .security import RateLimiter, provjeri_admin
 from .store import store
 
+@asynccontextmanager
+async def _zivotni_ciklus(_app: FastAPI):
+    # Desktop korisnik nema admin token: prvi sken konektora ide u pozadini.
+    threading.Thread(target=admin.pokreni_sken, name="pocetni-sken", daemon=True).start()
+    yield
+
+
 app = FastAPI(title="AgentMujoJob API", version="1.0.0",
-              description="Open-source AI asistent za pronalazak posla (BiH, Balkan, Europa, svijet).")
+              description="Open-source AI asistent za pronalazak posla (BiH, Balkan, Europa, svijet).",
+              lifespan=_zivotni_ciklus)
 
 app.add_middleware(CORSMiddleware,
                    allow_origins=[o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()],
@@ -39,7 +51,9 @@ class SearchIn(BaseModel):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "servis": settings.APP_NAME, "perzistencija": "nema (samo memorija)"}
+    _, ukupno = store.listaj(None, 1, 1)
+    return {"status": "ok", "servis": settings.APP_NAME, "perzistencija": "nema (samo memorija)",
+            "spremno": ukupno > 0, "oglasa": ukupno}
 
 
 @app.get("/api/jobs")
@@ -68,7 +82,13 @@ def pretraga(body: SearchIn, request: Request):
     try:
         ai = tumaci_upit(body.upit)
     except AiNedostupan as e:
-        raise HTTPException(503, f"AI jezgro trenutno nedostupno: {e}")
+        # Iskrena degradacija: AI nedostupan -> lokalni parser ključnih riječi.
+        # Rezultati su označeni u ai_napomena, nikad se ne predstavljaju kao AI.
+        ai = RezultatAI(
+            parsiraj_kriterije(body.upit),
+            f"AI jezgro nedostupno ({e}). Prikazani rezultati su po ključnim riječima.",
+            "lokalni-parser",
+        )
     k: Kriteriji = ai.kriteriji
     if body.geo_prioritet:
         doz = {"bih", "balkan", "europa", "svijet"}

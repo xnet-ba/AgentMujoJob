@@ -36,7 +36,7 @@ def test_search_validacija(monkeypatch):
     assert r.status_code == 200 and r.json()["ukupno"] >= 1
 
 
-def test_search_503_bez_ai(monkeypatch):
+def test_search_bez_ai_koristi_kljucne_rijeci(monkeypatch):
     import app.main as m
     from app.ai_providers import AiNedostupan
 
@@ -44,7 +44,10 @@ def test_search_503_bez_ai(monkeypatch):
         raise AiNedostupan("test")
     monkeypatch.setattr(m, "tumaci_upit", pad)
     r = client.post("/api/search", json={"upit": "komercijalist u Tešnju"})
-    assert r.status_code == 503 and "nedostupno" in r.json()["greska"]
+    assert r.status_code == 200
+    d = r.json()
+    assert "ključnim riječima" in (d.get("ai_napomena") or "")
+    assert d["ukupno"] >= 1
 
 
 def test_admin_zasticen():

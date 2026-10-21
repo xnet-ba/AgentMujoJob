@@ -59,7 +59,7 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 | 🌍 Filteri | Država, grad, kategorija, remote/hibrid/lokacija, ugovor, plata, datum |
 | 🔌 Konektori | Modularni; provjeren Greenhouse API (1102 oglasa u probnom skenu), RSS adapter, dokumentirani kandidati (EURES, Remotive, RemoteOK, Arbeitnow, JobTech, Ashby, WWR, Posao.hr) |
 | 🧹 Kvalitet podataka | Normalizacija, deduplikacija, provjera svježine; nepoznato se prikazuje kao „Nije navedeno” |
-| 🤖 AI jezgro | Isključivo OpenCode CLI s besplatnim modelima — bez ključeva, bez fallbacka (503 kad je nedostupno) |
+| 🤖 AI jezgro | OpenCode CLI s besplatnim modelima (bundlan u instalaciju) — bez ključeva; ako CLI nije povezan, pretraga se iskreno nastavlja po ključnim riječima |
 | 🔒 Privatnost | Nema naloga, nema CV-jeva, nema historije pretrage; sirovi upiti se ne logiraju |
 | 🖥️ Dvije platforme | Web (Next.js) + Windows 11 installer (Tauri 2, .msi) na istom API-ju |
 | 🛡️ Sigurnost | SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano |
@@ -72,11 +72,14 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 ┌──────────────┐      ┌──────────────┐
 │  Next.js web │──────▶              │
 └──────────────┘      │   FastAPI    │──▶ Store: samo memorija (bez baze, bez diska)
-┌──────────────┐      │   :8010      │    (fallback: lokalni JSON)
+┌──────────────┐      │   :8010      │
 │ Tauri 2 .msi │──────▶              │
 │ Windows 11   │      │ konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje
 └──────────────┘      └──────────────┘
 ```
+
+Windows instalacija je samostalna: `.msi` nosi backend (PyInstaller sidecar) i OpenCode CLI,
+pa na korisničkom računaru nije potreban Python ni ručna instalacija CLI-ja.
 
 Backend moduli (`backend/app/`): `main` (rute), `config` (env), `models` (tipovi), `security` (SSRF/rate-limit/auth), `store` (Appwrite/JSON), `normalize`, `dedup`, `criteria` (parser namjere), `ranking`, `connectors`, `ai_providers`, `admin` (skeniranje). Detalji: [`docs/ARHITEKTURA.md`](docs/ARHITEKTURA.md).
 
@@ -185,7 +188,7 @@ Puna tabela s endpointima, poljima i ToS napomenama: [`docs/KONEKTORI.md`](docs/
 
 ## AI pretraga i rangiranje
 
-Upit se **privremeno** analizira (nikad se ne pohranjuje): zanimanje → kategorija, grad/država, plata (KM/BAM/EUR/€/$), remote/hibrid, ugovor, vještine. Jezgro je **OpenCode CLI** (`opencode run`, besplatni modeli, bez `--auto`, u praznom temp direktoriju, s timeoutom): prijava se radi jednom na serveru (`opencode auth login`), **aplikacija ne posjeduje i ne traži API ključeve** — nema ih u browseru, desktop paketu, logovima ni repozitoriju. Modelov JSON je savjet koji validira deterministički parser; svaki neuspjeh CLI-ja vraća iskrenu grešku 503 — nema tihog degradiranja ni alternativnih provajdera.
+Upit se **privremeno** analizira (nikad se ne pohranjuje): zanimanje → kategorija, grad/država, plata (KM/BAM/EUR/€/$), remote/hibrid, ugovor, vještine. Jezgro je **OpenCode CLI** (`opencode run`, besplatni modeli, bez `--auto`, u praznom temp direktoriju, s timeoutom): CLI je bundlan uz aplikaciju, a prijava se radi jednom (`opencode auth login`). **Aplikacija ne posjeduje i ne traži API ključeve** — nema ih u browseru, desktop paketu, logovima ni repozitoriju. Modelov JSON je savjet koji validira deterministički parser. Ako CLI nije instaliran/povezan, pretraga **ne pada**: koristi lokalni parser ključnih riječi, a odgovor to jasno navodi u `ai_napomena` — nikad se ne predstavlja kao AI rezultat.
 
 Signali rangiranja: zanimanje/vještine, lokacija, zahtjevi korisnika, tip zaposlenja, plata (ako je poznata — **oglas bez plate se ne kažnjava**), svježina. Ocjena je procjena relevantnosti, ne garancija zaposlenja. Sadržaj oglasa tretira se kao nepouzdan ulaz (prompt-injection otpornost).
 
@@ -217,7 +220,7 @@ podaci nestaju**. Nema korisničkih kolekcija (ni `users`, `profiles`, `cvs`, `a
 
 ## Windows 11 aplikacija
 
-Tauri 2 omotač oko istog frontenda (`desktop/src-tauri/`): normalna instalacija kroz Start meni, normalna deinstalacija, backend URL podesiv u aplikaciji, razumljive poruke + dugme za ponovno povezivanje kad server nije dostupan, bez ugrađenih tajni, bez Pythona/baze na korisničkom računaru. Instalacijski `.msi` pravi GitHub Actions workflow `windows-build.yml` (windows-latest runner; potpisivanje nije podešeno — nema certifikata). Upute: [`docs/WINDOWS-BUILD.md`](docs/WINDOWS-BUILD.md).
+Tauri 2 omotač oko istog frontenda (`desktop/src-tauri/`): normalna instalacija kroz Start meni, normalna deinstalacija, razumljive poruke + dugme za ponovno povezivanje, bez ugrađenih tajni. Instalacija je **samostalna**: `.msi` nosi backend kao PyInstaller sidecar i OpenCode CLI, pa na korisničkom računaru nije potreban Python ni ručna instalacija CLI-ja. Backend se podiže uz aplikaciju na `127.0.0.1:8010` i gasi pri izlasku. Instalacijski `.msi` pravi GitHub Actions workflow `windows-build.yml` (windows-latest runner; potpisivanje nije podešeno — nema certifikata). Upute: [`docs/WINDOWS-BUILD.md`](docs/WINDOWS-BUILD.md).
 
 ---
 
@@ -229,7 +232,7 @@ Aplikacija je namijenjena isključivo lokalnom radu na Windows 11 (instalacija k
 
 ## Testiranje
 
-- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI (bez fallbacka: 503), greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **25/25 prolazi.**
+- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI, iskrena degradacija na ključne riječi kad AI nedostaje, greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **25/25 prolazi.**
 - Frontend: `npm test` (2/2) + `npm run build` (uspješan).
 - CI (GitHub Actions): `tests.yml` na svaki push + secret-scan; `windows-build.yml` ručno/na release.
 - Fixture podaci su jasno označeni testni i nikad se ne prikazuju kao produkcijski oglasi.
@@ -245,7 +248,7 @@ AgentMujoJob/
 │                       #          connectors, ai_providers, admin
 ├── backend/tests/      # pytest (25 testova) + jasno označeni fixturei
 ├── frontend/           # Next.js 14 + TypeScript (bosanski UI)
-├── desktop/src-tauri/  # Tauri 2 konfiguracija (Windows .msi)
+├── desktop/src-tauri/  # Tauri 2 konfiguracija + bundlani sidecari (.msi)
 ├── docs/               # ARHITEKTURA, KONEKTORI, WINDOWS-BUILD,
 │                       # SIGURNOST + index.html
 ├── .github/workflows/  # tests.yml, windows-build.yml
@@ -261,7 +264,7 @@ AgentMujoJob/
 - ✅ Javan GitHub repo: `https://github.com/xnet-ba/AgentMujoJob`.
 - ✅ Anonimnost: nema baze ni snimanja — gašenjem appa svi podaci nestaju.
 - ✅ Lokalni rad: backend `127.0.0.1:8010` + statički frontend u Tauri paketu, bez javne domene i bez hostinga.
-- ⏳ Windows `.msi`: pravi se u CI-ju (`windows-build.yml`); lokalno nema Rust/Windows okruženja.
+- ✅ Windows `.msi`/`.exe`: CI (`windows-build.yml`) proizvodi artefakt sa backendom i OpenCode CLI-jem; potpisivanje nije podešeno.
 - ⏳ BiH konektori: domaći portali ne nude API/RSS — potreban dogovor; verificirani međunarodni kandidati čekaju registraciju.
 - Pravila ponašanja za agente: [`AGENTS.md`](AGENTS.md). Nema izmišljenih podataka, nema tvrdnji bez pokrenutih provjera.
 

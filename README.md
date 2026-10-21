@@ -65,6 +65,7 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 | 🤖 AI jezgro | OpenCode CLI s besplatnim modelom (bundlan u instalaciju) — **radi bez prijave i bez ključeva**; ako model nije dostupan, pretraga se iskreno nastavlja po ključnim riječima |
 | 🔒 Privatnost | Nema naloga, nema CV-jeva, nema historije pretrage; sirovi upiti se ne logiraju |
 | 🖥️ Jedna platforma | Windows 11 installer (Tauri 2, `.msi`) — bez web verzije i bez hostinga |
+| 🎨 Dizajn | Fluent 2 / Windows 11: Mica pozadina, Segoe UI Variable, svijetla i tamna tema, fokus i kontrast po pristupačnosti |
 | 🛡️ Sigurnost | SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano |
 
 ---
@@ -174,7 +175,7 @@ Napomena: dodavanje novog izvora je jedan konektor + unos u `REGISTAR`/`META_IZV
 
 ## AI pretraga i rangiranje
 
-Upit se **privremeno** analizira (nikad se ne pohranjuje): zanimanje → kategorija, grad/država, plata (KM/BAM/EUR/€/$), remote/hibrid, ugovor, vještine. Jezgro je **OpenCode CLI** (`opencode run --format json`, bez `--auto`, u praznom temp direktoriju, timeout 45 s), bundlan uz aplikaciju.
+Upit se **privremeno** analizira (nikad se ne pohranjuje): zanimanje → kategorija, grad/država, plata (KM/BAM/EUR/€/$), remote/hibrid, ugovor, vještine. Jezgro je **OpenCode CLI** (`opencode run --format json`, bez `--auto`, u praznom temp direktoriju, timeout 20 s), bundlan uz aplikaciju.
 
 Podrazumijevani model je `opencode/deepseek-v4.1-flash-free` — besplatni OpenCode Zen model koji **radi bez prijave i bez računa** (bez `auth.json`, bez API ključa). Model se mijenja kroz `OPENCODE_MODEL` (npr. `opencode/glm-5.3-flash-free`). **Aplikacija ne posjeduje i ne traži API ključeve** — nema ih u browseru, desktop paketu, logovima ni repozitoriju. Modelov JSON je savjet koji validira deterministički parser. Ako model nije dostupan (mreža/kvota), pretraga **ne pada**: koristi lokalni parser ključnih riječi, a odgovor to jasno navodi u `ai_napomena` — nikad se ne predstavlja kao AI rezultat.
 

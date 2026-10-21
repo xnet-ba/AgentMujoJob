@@ -17,7 +17,7 @@ class Settings:
     # `opencode/<model>-free` modeli rade bez prijave (bez auth.json); lista: `opencode models`.
     OPENCODE_BIN: str = _get("OPENCODE_BIN", "opencode")
     OPENCODE_MODEL: str = _get("OPENCODE_MODEL", "opencode/deepseek-v4.1-flash-free")
-    OPENCODE_TIMEOUT: int = int(_get("OPENCODE_TIMEOUT", "45") or 45)
+    OPENCODE_TIMEOUT: int = int(_get("OPENCODE_TIMEOUT", "20") or 20)
     # CORS
     CORS_ORIGINS: str = _get("CORS_ORIGINS", "http://tauri.localhost,tauri://localhost")
     # Dozvoljeni origin-i: Tauri webview (nema web/browser klijenta).

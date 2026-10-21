@@ -5,22 +5,30 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: powershell
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
       - run: npm --prefix frontend ci
-      - run: Remove-Item -Path frontend/out -Force -ErrorAction SilentlyContinue
       - run: node scripts/tauri-export-build.js
-      - run: tauri-apps/tauri-action@v0
+        env:
+          NEXT_PUBLIC_API_URL: 'http://127.0.0.1:8010'
+      - uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: desktop
         env:
           TAURI_BUILD: '1'
-          NEXT_PUBLIC_API_URL: 'https://posao.kolektiv.pro'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agentmujojob-windows
+          if-no-files-found: error
+          path: |
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe

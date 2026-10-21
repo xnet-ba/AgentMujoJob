@@ -15,7 +15,7 @@ try {
     cwd: frontend,
     stdio: "inherit",
     shell: win,
-    env: { ...process.env, TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: "https://posao.kolektiv.pro" },
+    env: { ...process.env, TAURI_BUILD: "1", NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8010" },
   });
   if (r.status !== 0) throw new Error("next build failed with code " + r.status);
   if (!fs.existsSync(outIndex)) throw new Error("nema frontend/out/index.html");

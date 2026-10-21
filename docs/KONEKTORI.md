@@ -18,7 +18,7 @@ Lažni/statički konektori zabranjeni.
 | posao-hr-rss | `https://www.posao.hr/rss/` | RSS | Hrvatska | 30 | Javan feed; redistribuciju provjeriti s operaterom |
 | wwr-rss | `https://weworkremotely.com/remote-jobs.rss` | RSS | svijet-remote | 92 | Javno ponuđen RSS; komercijalnu redistribuciju provjeriti |
 
-Ukupno: **~2030 jedinstvenih oglasa** po krugu skeniranja (~38 s, dedup uključen).
+Ukupno: **~1.200–2.000 jedinstvenih oglasa** po krugu skeniranja (~15–40 s, dedup uključen; broj varira sa izvorima).
 
 ## BiH — provjereno 2026-10-21
 

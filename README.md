@@ -146,7 +146,7 @@ Svaki konektor ima: timeout 12s, limit veličine odgovora, SSRF provjeru, umjere
 |---|---|---|---|
 | `klix-posao` (Klix Posao) | javni sitemap + schema.org `JobPosting` | BiH | ✅ 100 oglasa (od 186 aktivnih u sitemapu; cap 60/sken), pun opis/plata/tip ugovora |
 | `mojposao-ba` (MojPosao.ba) | javne stranice pretrage (SSR) | BiH | ✅ 100 oglasa; naslov, poslodavac, lokacija, URL |
-| `greenhouse-eu` | javni boards API | Evropa + remote | ✅ 1150 oglasa |
+| `greenhouse-eu` | javni boards API | Evropa + remote | ✅ 400–1150 oglasa (varira po boardu) |
 | `remotive` | javni API | svijet-remote | ✅ 10 oglasa |
 | `remoteok` | javni API | svijet-remote | ✅ 99 oglasa |
 | `arbeitnow` | javni API | Evropa + remote | ✅ 300 oglasa |
@@ -155,7 +155,7 @@ Svaki konektor ima: timeout 12s, limit veličine odgovora, SSRF provjeru, umjere
 | `posao-hr-rss` | RSS | Hrvatska | ✅ 30 oglasa |
 | `wwr-rss` | RSS | svijet-remote | ✅ 92 oglasa |
 
-Ukupan sken svih izvora: **~2030 jedinstvenih oglasa za ~38 s** (broj varira sa izvorima) (dedup radi; pokreće se u pozadini pri startu).
+Ukupan sken svih izvora: **~1.200–2.000 jedinstvenih oglasa za ~15–40 s** (broj varira sa izvorima) (dedup radi; pokreće se u pozadini pri startu).
 
 ### Provjereno i odbijeno (nije uključeno)
 

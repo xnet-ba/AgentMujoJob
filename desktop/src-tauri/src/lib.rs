@@ -41,6 +41,32 @@ fn pokreni_backend(app: &tauri::AppHandle) -> Option<Child> {
     cmd.spawn().ok()
 }
 
+/// Otvara URL u podrazumijevanom sistemskom pregledaču (Tauri WebView2 blokira `target="_blank"`).
+/// Samo http/https, bez navodnika/bijelih znakova; `explorer.exe` prima URL kao zaseban argument
+/// (bez shell parsiranja, pa `&` u upitu ne može razbiti komandu).
+#[tauri::command]
+fn otvori_url(url: String) -> Result<(), String> {
+    let dozvoljeno = (url.starts_with("http://") || url.starts_with("https://"))
+        && url.len() <= 2048
+        && !url.chars().any(|c| c == '"' || c == '\'' || c.is_whitespace() || c.is_control());
+    if !dozvoljeno {
+        return Err("nedozvoljen link".to_string());
+    }
+    #[cfg(windows)]
+    {
+        Command::new("explorer.exe")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = url;
+        Err("otvaranje linkova je podrzano samo na Windowsu".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -52,6 +78,7 @@ pub fn run() {
             app.manage(BackendProces(Mutex::new(child)));
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![otvori_url])
         .build(tauri::generate_context!())
         .expect("AgentMujoJob se nije pokrenuo")
         .run(|app, event| {

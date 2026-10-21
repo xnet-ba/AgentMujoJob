@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { API_URL, izvori, nazivIzvora, plata, pretrazi, type Izvor, type Rangirani } from "../lib/api";
+import { otvoriSpolja, type Prozor } from "../lib/veze";
 
 const PRIMJERI = [
   "kuhar u Sarajevu",
@@ -14,6 +15,22 @@ const VRSTA: Record<string, string> = {
   hibrid: "Hibrid",
   remote: "Remote",
 };
+
+/** U Tauri WebView-u `target="_blank"` je blokiran — link ide kroz sistemski pregledač. */
+function linkProps(url: string) {
+  return {
+    href: url,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    onClick: (e: React.MouseEvent) => {
+      const w = window as unknown as Prozor;
+      if (w.__TAURI__) {
+        e.preventDefault();
+        otvoriSpolja(url, w);
+      }
+    },
+  };
+}
 
 function Logo() {
   return (
@@ -216,7 +233,7 @@ export default function Pocetna() {
                     </div>
 
                     <div className="oglas-dno">
-                      <a className="veza" href={r.oglas.original_url} target="_blank" rel="noopener noreferrer">
+                      <a className="veza" {...linkProps(r.oglas.original_url)}>
                         Otvori originalni oglas
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
                           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -243,7 +260,7 @@ export default function Pocetna() {
             <li key={i.id}>
               <span className="izvor-ime">
                 {i.url
-                  ? <a href={i.url} target="_blank" rel="noopener noreferrer">{i.naziv || i.id}</a>
+                  ? <a {...linkProps(i.url)}>{i.naziv || i.id}</a>
                   : (i.naziv || i.id)}
               </span>
               {i.obuhvat && <span className="izvor-opis">{i.obuhvat}</span>}

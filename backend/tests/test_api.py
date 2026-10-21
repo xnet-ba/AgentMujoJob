@@ -55,6 +55,22 @@ def test_admin_zasticen():
     assert client.get("/api/admin/status").status_code == 401
 
 
+def test_pretraga_rangira_sve_oglase_ne_samo_prvih_500(monkeypatch):
+    import app.main as m
+    from app.ai_providers import RezultatAI
+    from app.criteria import parsiraj_kriterije
+    rows = [dict(TEST_OGLASI[0], id=f"filler-{i}", naslov=f"Punjač {i}",
+                 original_url=f"https://primjer.test/filler/{i}") for i in range(600)]
+    rows.append(dict(TEST_OGLASI[1], id="zadnji", original_url="https://primjer.test/zadnji"))
+    store.ocisti()
+    store.upsert(rows)
+    k = parsiraj_kriterije("python developer remote")
+    monkeypatch.setattr(m, "tumaci_upit", lambda t: RezultatAI(k, "test", "opencode"))
+    d = client.post("/api/search", json={"upit": "python developer remote"}).json()
+    assert d["ukupno"] == 601
+    assert any(r["oglas"]["id"] == "zadnji" for r in d["rezultati"])
+
+
 def test_neaktivan_oglas_se_ne_vraca():
     rows = [dict(TEST_OGLASI[0], status="neaktivan"), TEST_OGLASI[1]]
     store.ocisti()

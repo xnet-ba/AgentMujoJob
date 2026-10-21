@@ -57,7 +57,7 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 | 🔍 Pretraga prirodnim jezikom | Izvlači zanimanje, vještine, grad, državu, platu, remote/hibrid, ugovor |
 | 🏆 Rangiranje | Transparentna ocjena 0–100 s konkretnim razlozima za i protiv |
 | 🌍 Filteri | Država, grad, kategorija, remote/hibrid/lokacija, ugovor, plata, datum |
-| 🔌 Konektori | Modularni; provjeren Greenhouse API (1102 oglasa u probnom skenu), RSS adapter, dokumentirani kandidati (EURES, Remotive, RemoteOK, Arbeitnow, JobTech, Ashby, WWR, Posao.hr) |
+| 🔌 Konektori | 10 provjerenih izvora (Klix Posao i MojPosao.ba za BiH + Greenhouse, Remotive, RemoteOK, Arbeitnow, JobTech, EURES, Posao.hr, WWR); svaki testiran uživo prije uključivanja |
 | 🧹 Kvalitet podataka | Normalizacija, deduplikacija, provjera svježine; nepoznato se prikazuje kao „Nije navedeno” |
 | 🤖 AI jezgro | OpenCode CLI s besplatnim modelima (bundlan u instalaciju) — bez ključeva; ako CLI nije povezan, pretraga se iskreno nastavlja po ključnim riječima |
 | 🔒 Privatnost | Nema naloga, nema CV-jeva, nema historije pretrage; sirovi upiti se ne logiraju |
@@ -169,20 +169,35 @@ Primjer odgovora `/api/search` (skraćeno):
 
 Svaki konektor ima: timeout 12s, limit veličine odgovora, SSRF provjeru, umjereno osvježavanje (6h) i poštovanje ToS/robots. Lažni i statički konektori su zabranjeni pravilima projekta.
 
-| Izvor | Tip | Obuhvat | Status |
-|---|---|---|---|
-| `greenhouse-eu` (Greenhouse boards API) | API | Evropa + remote | ✅ Aktivan — probni sken: 1102 oglasa / 375 nakon dedupa |
-| `posao-hr-rss` (Posao.hr) | RSS | Hrvatska | ✅ Endpoint verificiran (HTTP 200) — čeka registraciju konektora |
-| `eures-search` (EURES, EU) | API | 31 država | ✅ Endpoint verificiran (~2,6M oglasa) — čeka konektor |
-| `remotive-api` (Remotive) | API | svijet-remote | ✅ Verificiran (obavezan link-back) — čeka konektor |
-| `remoteok-api` (RemoteOK) | API | svijet-remote | ✅ Verificiran (obavezan link-back) — čeka konektor |
-| `arbeitnow-api` (Arbeitnow) | API | Evropa + remote | ✅ Verificiran — čeka konektor |
-| `wwr-rss` (We Work Remotely) | RSS | svijet-remote | ✅ Verificiran — čeka konektor |
-| `jobtech-se` (JobTech Švedska) | API | Švedska | ✅ Verificiran — čeka konektor |
-| `ashby-boards` (Ashby) | API | globalno | ✅ Obrazac verificiran — čeka board-ove firmi |
-| BiH portali (mojposao.ba, boljiposao.com, posao.ba, FZZZ, ZZZRS, ZZZ Brčko) | — | BiH | ❌ Nude **ni javni API ni RSS** (provjereno: `/rss` → 404) — potreban direktan dogovor |
+**Testirano uživo 2026-10-21** — svaki konektor je pojedinačno pokrenut (`skeniraj()`), pa tek onda uključen:
 
-Puna tabela s endpointima, poljima i ToS napomenama: [`docs/KONEKTORI.md`](docs/KONEKTORI.md).
+| Izvor | Tip | Obuhvat | Rezultat testa |
+|---|---|---|---|
+| `klix-posao` (Klix Posao) | javni sitemap + schema.org `JobPosting` | BiH | ✅ 60 oglasa (od 186 aktivnih u sitemapu; cap 60/sken), pun opis/plata/tip ugovora |
+| `mojposao-ba` (MojPosao.ba) | javne stranice pretrage (SSR) | BiH | ✅ 100 oglasa; naslov, poslodavac, lokacija, URL |
+| `greenhouse-eu` | javni boards API | Evropa + remote | ✅ 1150 oglasa |
+| `remotive` | javni API | svijet-remote | ✅ 10 oglasa |
+| `remoteok` | javni API | svijet-remote | ✅ 99 oglasa |
+| `arbeitnow` | javni API | Evropa + remote | ✅ 300 oglasa |
+| `jobtech-se` | otvoreni podaci | Švedska | ✅ 100 oglasa |
+| `eures` | javni pretraživač | EU | ✅ 50 oglasa |
+| `posao-hr-rss` | RSS | Hrvatska | ✅ 30 oglasa |
+| `wwr-rss` | RSS | svijet-remote | ✅ 92 oglasa |
+
+Ukupan sken svih izvora: **1244 jedinstvena oglasa za ~30 s** (dedup radi; pokreće se u pozadini pri startu).
+
+### Provjereno i odbijeno (nije uključeno)
+
+| Kandidat | Razlog |
+|---|---|
+| `posao.ba` | Preusmjerava na `serda.ba` — nije više job board |
+| `poslovi.ba` | Oglasi se ne renderiraju u javnom HTML-u; nema provjerljivog strukturiranog endpointa |
+| `zaposli.ba` | Marketplace za majstore/usluge, ne oglasi za zaposlenje |
+| `boljiposao.com` | Vraća prazno tijelo ne-browser klijentima; content-signals u robots.txt |
+| `job.ba` | 302 bez `Location` headera na popis oglasa — nedostupno |
+| `burzarada.ba`, `uposleni.ba`, `posao-bih.com`, `oglasi.ba` | Domeni se ne resolviraju |
+
+Napomena: dodavanje novog izvora je jedan konektor + unos u `REGISTAR`/`META_IZVORA`; bez provjerenog javnog pristupa izvor se ne uključuje.
 
 ---
 
@@ -232,7 +247,7 @@ Aplikacija je namijenjena isključivo lokalnom radu na Windows 11 (instalacija k
 
 ## Testiranje
 
-- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI, iskrena degradacija na ključne riječi kad AI nedostaje, greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **25/25 prolazi.**
+- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI, iskrena degradacija na ključne riječi kad AI nedostaje, greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **28/28 prolazi.**
 - Frontend: `npm test` (2/2) + `npm run build` (uspješan).
 - CI (GitHub Actions): `tests.yml` na svaki push + secret-scan; `windows-build.yml` ručno/na release.
 - Fixture podaci su jasno označeni testni i nikad se ne prikazuju kao produkcijski oglasi.

@@ -269,7 +269,148 @@ class EuresKonektor:
 
 
 # Registar: greenhouse (provjeren) + RSS adapteri koji se dopunjuju bez koda.
+def _jobposting(html_tekst: str) -> dict | None:
+    """Izvuče schema.org JobPosting iz JSON-LD bloka (Klix ga objavljuje javno)."""
+    for m in re.finditer(r'<script[^>]+application/ld\+json[^>]*>(.*?)</script>', html_tekst, re.S):
+        try:
+            d = json.loads(m.group(1))
+        except json.JSONDecodeError:
+            continue
+        for k in (d if isinstance(d, list) else [d]):
+            if isinstance(k, dict) and k.get("@type") == "JobPosting":
+                return k
+    return None
+
+
+_VRSTA_UGOVORA = {"FULL_TIME": "puno radno vrijeme", "PART_TIME": "pola radnog vremena",
+                  "CONTRACTOR": "ugovor", "TEMPORARY": "privremeno", "INTERN": "praksa",
+                  "VOLUNTEER": "volonterski", "PER_DIEM": "po danu"}
+
+
+def _klix_id(url: str) -> int:
+    m = re.search(r"/(\d+)/?$", url)
+    return int(m.group(1)) if m else 0
+
+
+class KlixPosaoKonektor:
+    """Klix Posao (BiH). Javni sitemap aktivnih oglasa + schema.org JobPosting na detalju.
+
+    robots.txt dozvoljava sitemap i oglase (zabranjuje samo /api/ i /oglasi/ai-search).
+    """
+
+    id = "klix-posao"
+    naziv = "Klix Posao (BiH)"
+    obuhvat = "Bosna i Hercegovina"
+    MAX_OGLASA = 60
+
+    def skeniraj(self) -> tuple[list[dict], str | None]:
+        try:
+            raw = _fetch("https://posao.klix.ba/sitemaps/active_jobs.xml", {"posao.klix.ba"}, 4_000_000)
+        except (KonektorGreska, ValueError) as e:
+            return [], f"nedostupan: {e}"[:200]
+        urls = re.findall(r"<loc>\s*(https://posao\.klix\.ba/oglasi/[^<\s]+)\s*</loc>",
+                          raw.decode("utf-8", "replace"))
+        urls = sorted(set(urls), key=_klix_id, reverse=True)[: self.MAX_OGLASA]
+        out: list[dict] = []
+        greske = 0
+        for u in urls:
+            try:
+                b = _fetch(u, {"posao.klix.ba"}, 600_000).decode("utf-8", "replace")
+            except (KonektorGreska, ValueError):
+                greske += 1
+                continue
+            jp = _jobposting(b)
+            if not jp:
+                greske += 1
+                continue
+            mjesto = jp.get("jobLocation") if isinstance(jp.get("jobLocation"), dict) else {}
+            adr = mjesto.get("address") if isinstance(mjesto.get("address"), dict) else {}
+            lokacija = ", ".join(x for x in (adr.get("addressLocality"), adr.get("addressRegion")) if x) or None
+            poslodavac = (jp.get("hiringOrganization") or {}).get("name") \
+                if isinstance(jp.get("hiringOrganization"), dict) else None
+            plata: dict = {}
+            bs = jp.get("baseSalary")
+            if isinstance(bs, dict):
+                vrijednost = bs.get("value") if isinstance(bs.get("value"), dict) else {}
+                plata = {"plata_min": _plata_broj(vrijednost.get("minValue") or vrijednost.get("value")),
+                         "plata_max": _plata_broj(vrijednost.get("maxValue")),
+                         "plata_valuta": bs.get("currency")}
+            tip = jp.get("employmentType")
+            tip = tip[0] if isinstance(tip, list) and tip else tip
+            out.append({
+                "stabilni_id": f"klix-{_klix_id(u)}",
+                "naslov": jp.get("title"),
+                "poslodavac": poslodavac,
+                "lokacija": lokacija,
+                "drzava": "Bosna i Hercegovina" if adr.get("addressCountry") == "BA" else None,
+                "opis": _cisti_opis(jp.get("description"), 4000),
+                "vrsta_rada": "remote" if (jp.get("jobLocationType") == "TELECOMMUTE"
+                                           or "remote" in (lokacija or "").lower()) else "nepoznato",
+                "vrsta_ugovora": _VRSTA_UGOVORA.get(str(tip), None),
+                "original_url": jp.get("url") or u,
+                "datum_objave": str(jp.get("datePosted") or "")[:10] or None,
+                **plata,
+            })
+        nap = f"{greske} oglasa preskočeno" if greske else None
+        return out, nap
+
+
+_CARD_TITLE = re.compile(r'data-test="job-card-content-title"[^>]*>(.*?)</h3>', re.S)
+_NEAKTIVNI_ALT = {"logo-site", "avatar-site", "my-paycheck-site", "ppi-site", "logo"}
+
+
+class MojposaoKonektor:
+    """MojPosao.ba (BiH) — server-rendered kartice pretrage; robots dozvoljava uz Crawl-delay 1.
+
+    Kartice daju naslov, poslodavca i lokaciju; opis ostaje None (ne izmišljamo ga).
+    """
+
+    id = "mojposao-ba"
+    naziv = "MojPosao.ba (BiH)"
+    obuhvat = "Bosna i Hercegovina"
+    URL = "https://www.mojposao.ba/pretraga-poslova"
+
+    def skeniraj(self) -> tuple[list[dict], str | None]:
+        try:
+            b = _fetch(self.URL, {"www.mojposao.ba"}, 4_000_000).decode("utf-8", "replace")
+        except (KonektorGreska, ValueError) as e:
+            return [], f"nedostupan: {e}"[:200]
+        out: list[dict] = []
+        vidjeno: set[str] = set()
+        for m in _CARD_TITLE.finditer(b):
+            naslov = _cisti_opis(m.group(1), 200)
+            if not naslov:
+                continue
+            pre = b[max(0, m.start() - 8000):m.start()]
+            hrefs = re.findall(r'href="(/posao/[^"?#]+)', pre)
+            if not hrefs:
+                continue
+            url = "https://www.mojposao.ba" + hrefs[-1].replace("&amp;", "&")
+            if url in vidjeno:
+                continue
+            vidjeno.add(url)
+            alts = [a.strip() for a in re.findall(r'alt="([^"]{2,80})"', pre)
+                    if a.strip() not in _NEAKTIVNI_ALT]
+            pos = b[m.end():m.end() + 6000]
+            lm = re.search(r'info__child[^>]*>.*?<!--\[-->(.*?)<!--\]-->', pos, re.S)
+            lokacija = _cisti_opis(lm.group(1), 120) if lm else None
+            out.append({
+                "stabilni_id": hrefs[-1],
+                "naslov": naslov,
+                "poslodavac": alts[-1] if alts else None,
+                "lokacija": lokacija,
+                "vrsta_rada": "remote" if lokacija and "remote" in lokacija.lower() else "nepoznato",
+                "original_url": url,
+            })
+        if not out:
+            return [], "stranica pretrage bez prepoznatih oglasa"
+        return out, None
+
+
+# Registar: greenhouse (provjeren) + RSS adapteri koji se dopunjuju bez koda.
 REGISTAR: dict[str, object] = {
+    # Redoslijed = redoslijed skena; brzi izvori prvi da UI dobije podatke odmah.
+    "mojposao-ba": MojposaoKonektor(),
     "greenhouse-eu": GreenhouseKonektor(),
     "remotive": RemotiveKonektor(),
     "remoteok": RemoteokKonektor(),
@@ -277,7 +418,9 @@ REGISTAR: dict[str, object] = {
     "jobtech-se": JobtechKonektor(),
     "eures": EuresKonektor(),
     "posao-hr-rss": RssKonektor("posao-hr-rss", "Posao.hr (RSS)", "https://www.posao.hr/rss/", "Hrvatska", "Hrvatska"),
-    "wwr-rss": RssKonektor("wwr-rss", "We Work Remotely (RSS)", "https://weworkremotely.com/remote-jobs.rss", "svijet-remote"),
+    "wwr-rss": RssKonektor("wwr-rss", "We Work Remotely (RSS)", "https://weworkremotely.com/remote-jobs.rss", "svijet", "svijet"),
+    # Klix je najsporiji (60 detaljnih stranica) pa ide zadnji.
+    "klix-posao": KlixPosaoKonektor(),
 }
 
 RSS_IZVORI = [
@@ -285,6 +428,13 @@ RSS_IZVORI = [
 ]
 
 META_IZVORA = {
+    "klix-posao": {"url": "https://posao.klix.ba", "pristup": "javni sitemap + JobPosting JSON-LD",
+                   "pravila": "robots.txt dozvoljava sitemap i oglase (ne /api/); do 60 najnovijih oglasa/sken.",
+                   "osvjezavanje": "svakih 6h",
+                   "polja": "naslov, poslodavac, lokacija, opis, plata, tip ugovora, url, datum"},
+    "mojposao-ba": {"url": "https://www.mojposao.ba/pretraga-poslova", "pristup": "javne stranice pretrage",
+                    "pravila": "robots.txt dozvoljava uz Crawl-delay 1; jedan zahtjev/sken, bez opisa.",
+                    "osvjezavanje": "svakih 6h", "polja": "naslov, poslodavac, lokacija, url"},
     "greenhouse-eu": {"url": "https://boards-api.greenhouse.io", "pristup": "javni API",
                       "pravila": "Poštovati ToS poslodavca; 1 zahtjev/board/sken; timeout 12s.",
                       "osvjezavanje": "svakih 6h", "polja": "naslov, poslodavac, lokacija, opis, url, datum"},

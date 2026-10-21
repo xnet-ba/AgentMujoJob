@@ -33,9 +33,13 @@ class Store:
                 novi += 1
         return len(oglasi), novi
 
+    def svi(self) -> list[dict]:
+        """Svi aktivni oglasi (bez paginacije) — za rangiranje pretrage."""
+        return [o for o in self._oglasi.values() if o.get("status", "aktivan") == "aktivan"]
+
     def listaj(self, filteri: dict | None = None, stranica: int = 1, po_stranici: int = 20) -> tuple[list[dict], int]:
         filteri = filteri or {}
-        rows = [o for o in self._oglasi.values() if o.get("status", "aktivan") == "aktivan"]
+        rows = self.svi()
         for klj in ("drzava", "kategorija", "vrsta_rada", "vrsta_ugovora"):
             if filteri.get(klj):
                 rows = [o for o in rows if (o.get(klj) or "").lower() == filteri[klj].lower()]

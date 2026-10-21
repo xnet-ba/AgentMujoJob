@@ -45,8 +45,8 @@ a{color:var(--plava)}
 <div class="mreza">
 <div class="kartica"><b>🔍 Prirodni jezik</b>Zanimanje, vještine, grad, plata, remote/hibrid, ugovor — iz jedne rečenice.</div>
 <div class="kartica"><b>🏆 Rangiranje 0–100</b>Transparentna ocjena s razlozima za i protiv. Oglas bez plate se ne kažnjava.</div>
-<div class="kartica"><b>🔌 Provjereni izvori</b>Greenhouse API aktivan (1102 oglasa u probnom skenu); EURES, Remotive, RemoteOK i drugi verificirani.</div>
-<div class="kartica"><b>🤖 AI jezgro</b>Isključivo OpenCode CLI s besplatnim modelima. Bez ključeva, bez fallbacka.</div>
+<div class="kartica"><b>🔌 Provjereni izvori</b>10 izvora uživo testirano: Klix Posao i MojPosao.ba za BiH, plus Greenhouse, EURES, Remotive, RemoteOK i drugi.</div>
+<div class="kartica"><b>🤖 AI jezgro</b>OpenCode CLI s besplatnim modelom — radi bez prijave i bez ključeva.</div>
 <div class="kartica"><b>🔒 Privatnost</b>Nema naloga ni CV-jeva. Sirovi upiti se ne logiraju i ne pohranjuju.</div>
 <div class="kartica"><b>🛡️ Sigurnost</b>SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano.</div>
 </div></section>
@@ -80,11 +80,12 @@ cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3
 
 <section class="sekcija"><h2>Izvori oglasa</h2>
 <table><tr><th>Izvor</th><th>Obuhvat</th><th>Status</th></tr>
-<tr><td>Greenhouse boards API</td><td>Evropa + remote</td><td class="status-ok">✅ Aktivan (1102/375)</td></tr>
-<tr><td>EURES (EU)</td><td>31 država</td><td class="status-ok">✅ Verificiran (~2,6M)</td></tr>
-<tr><td>Remotive / RemoteOK</td><td>svijet-remote</td><td class="status-ok">✅ Verificirani</td></tr>
-<tr><td>Arbeitnow / WWR / JobTech / Ashby / Posao.hr</td><td>EU / remote / HR</td><td class="status-ok">✅ Verificirani</td></tr>
-<tr><td>BiH portali (mojposao.ba, boljiposao.com, posao.ba, zavodi)</td><td>BiH</td><td class="status-ne">❌ Nude ni API ni RSS — treba dogovor</td></tr></table></section>
+<tr><td>Klix Posao</td><td>BiH</td><td class="status-ok">✅ 60 oglasa (sitemap + JobPosting)</td></tr>
+<tr><td>MojPosao.ba</td><td>BiH</td><td class="status-ok">✅ 100 oglasa (javna pretraga)</td></tr>
+<tr><td>Greenhouse boards API</td><td>Evropa + remote</td><td class="status-ok">✅ 1150 oglasa</td></tr>
+<tr><td>EURES / Remotive / RemoteOK</td><td>EU / svijet-remote</td><td class="status-ok">✅ 50 / 10 / 99 oglasa</td></tr>
+<tr><td>Arbeitnow / WWR / JobTech / Posao.hr</td><td>EU / remote / HR</td><td class="status-ok">✅ 300 / 92 / 100 / 30 oglasa</td></tr>
+<tr><td>posao.ba, poslovi.ba, zaposli.ba, boljiposao.com</td><td>BiH</td><td class="status-ne">❌ Provjereno — nije upotrebljivo (vidi README)</td></tr></table></section>
 
 <section class="sekcija"><h2>Status projekta</h2>
 <table><tr><th>Stavka</th><th>Stanje</th></tr>

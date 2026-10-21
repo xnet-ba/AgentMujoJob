@@ -93,7 +93,9 @@ def pretraga(body: SearchIn, request: Request):
     if body.geo_prioritet:
         doz = {"bih", "balkan", "europa", "svijet"}
         k.geo_prioritet = [g for g in body.geo_prioritet if g in doz] or k.geo_prioritet  # type: ignore[assignment]
-    rows, _ = store.listaj(None, 1, 500)
+    # Rangira se cijeli aktivni skup; ranije je rez bio 500 (prvih 500 po redoslijedu
+    # skena), zbog čega izvori skenirani kasnije nikad nisu ulazili u pretragu.
+    rows = store.svi()
     rangirani: list[RangiraniOglas] = []
     for o in rows:
         ocjena, za, protiv = rangiraj(o, k)

@@ -14,9 +14,9 @@ class Settings:
     # Admin (obavezno za /admin/*)
     ADMIN_TOKEN: str = _get("ADMIN_TOKEN", "")
     # AI jezgro: isključivo OpenCode CLI s besplatnim modelima — NEMA API ključeva ni fallback provajdera.
-    # Prijava se radi jednom na serveru: `opencode auth login`. Model: `opencode models`.
+    # `opencode/<model>-free` modeli rade bez prijave (bez auth.json); lista: `opencode models`.
     OPENCODE_BIN: str = _get("OPENCODE_BIN", "opencode")
-    OPENCODE_MODEL: str = _get("OPENCODE_MODEL", "")  # prazno = podrazumijevani model CLI-ja
+    OPENCODE_MODEL: str = _get("OPENCODE_MODEL", "opencode/deepseek-v4.1-flash-free")
     OPENCODE_TIMEOUT: int = int(_get("OPENCODE_TIMEOUT", "45") or 45)
     # CORS
     CORS_ORIGINS: str = _get("CORS_ORIGINS", "http://localhost:3000")

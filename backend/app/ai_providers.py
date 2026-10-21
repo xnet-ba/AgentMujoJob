@@ -2,7 +2,8 @@
 
 Nema API ključeva, nema vanjskih AI SDK-ova, nema HTTP poziva prema AI provajderima,
 nema alternativnih provajdera (uklonjeni OpenAI/Ollama/OpenRouter putevi).
-Prijava se radi jednom na serveru (`opencode auth login`); aplikacija nikad ne vidi tajne.
+`opencode/<model>-free` modeli rade bez prijave i bez računa — nema auth.json ni ključeva;
+aplikacija nikad ne vidi tajne. Model se može promijeniti kroz OPENCODE_MODEL.
 `opencode run` se pokreće BEZ --auto (nikakva odobrenja alata), u praznom temp direktoriju,
 s timeoutom. Svaki neuspjeh podiže AiNedostupan -> API vraća 503 s iskrenom porukom,
 nikad tiho degradirane rezultate.
@@ -123,6 +124,6 @@ def tumaci_upit(tekst: str) -> RezultatAI:
     except Exception as e:
         raise AiNedostupan(f"OpenCode CLI se nije izvršio: {e}"[:200]) from e
     if p.returncode != 0 or not p.stdout.strip():
-        raise AiNedostupan("OpenCode CLI nije vratio odgovor (provjeriti `opencode auth login`).")
+        raise AiNedostupan("OpenCode CLI nije vratio odgovor (provjeriti mrežu i OPENCODE_MODEL).")
     _primijeni_model(k, _izvuci_kriterije_json(_izvuci_tekst_iz_eventa(p.stdout)))
     return RezultatAI(k, "OpenCode CLI tumačenje + deterministička validacija.", "opencode")

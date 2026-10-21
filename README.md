@@ -221,9 +221,9 @@ Tauri 2 omotač oko istog frontenda (`desktop/src-tauri/`): normalna instalacija
 
 ---
 
-## Produkcija
+## Lokalno pokretanje
 
-Javna domena: **`https://posao.kolektiv.pro`** (DNS zapis u pripremi). Backend radi samo na `127.0.0.1:8010` iza reverse proxyja — interni portovi se ne izlažu javnosti; frontend i `/api/` idu kroz proxy. Systemd servis s ograničenim restartom, health check, log rotacija, backup `.env` (van repoa — jedina datoteka s tajnama), rollback gašenjem servisa. Datoteke i koraci: [`docs/DEPLOY.md`](docs/DEPLOY.md), [`deploy/linux/`](deploy/linux/).
+Aplikacija je namijenjena isključivo lokalnom radu na Windows 11 (instalacija kroz `.msi`). Nema javne domene ni hostinga: backend sluša `127.0.0.1:8010`, frontend je statički export unutar Tauri paketa, a podaci žive samo u memoriji procesa. Za razvoj: `uvicorn app.main:app --port 8010` u `backend/` i `npm run dev` u `frontend/`.
 
 ---
 
@@ -246,9 +246,8 @@ AgentMujoJob/
 ├── backend/tests/      # pytest (25 testova) + jasno označeni fixturei
 ├── frontend/           # Next.js 14 + TypeScript (bosanski UI)
 ├── desktop/src-tauri/  # Tauri 2 konfiguracija (Windows .msi)
-├── deploy/linux/       # systemd servis + nginx snippet
-├── docs/               # ARHITEKTURA, KONEKTORI, DEPLOY,
-│                       # DEPLOY, WINDOWS-BUILD, SIGURNOST + index.html
+├── docs/               # ARHITEKTURA, KONEKTORI, WINDOWS-BUILD,
+│                       # SIGURNOST + index.html
 ├── .github/workflows/  # tests.yml, windows-build.yml
 ├── AGENTS.md           # pravila za buduće AI agente
 └── .env.example        # prazan predložak (bez vrijednosti)
@@ -261,8 +260,8 @@ AgentMujoJob/
 - ✅ Backend API + web UI implementirani, testirani, rade end-to-end sa stvarnim oglasima.
 - ✅ Javan GitHub repo: `https://github.com/xnet-ba/AgentMujoJob`.
 - ✅ Anonimnost: nema baze ni snimanja — gašenjem appa svi podaci nestaju.
-- ✅ `https://posao.kolektiv.pro` uživo: web + `/api/*` kroz reverse proxy s TLS-om, backend systemd, frontend PM2, skeniranje i AI pretraga verificirani end-to-end.
-- ⏳ Windows `.msi`: pravi se u CI-ju nakon objave (lokalno nema Rust/Windows okruženja).
+- ✅ Lokalni rad: backend `127.0.0.1:8010` + statički frontend u Tauri paketu, bez javne domene i bez hostinga.
+- ⏳ Windows `.msi`: pravi se u CI-ju (`windows-build.yml`); lokalno nema Rust/Windows okruženja.
 - ⏳ BiH konektori: domaći portali ne nude API/RSS — potreban dogovor; verificirani međunarodni kandidati čekaju registraciju.
 - Pravila ponašanja za agente: [`AGENTS.md`](AGENTS.md). Nema izmišljenih podataka, nema tvrdnji bez pokrenutih provjera.
 

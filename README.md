@@ -22,7 +22,7 @@ Open-source AI asistent za pronalazak posla — **lokalno na Windowsu 11**. Jeda
 1. [Šta je AgentMujoJob](#šta-je-agentmujojob)
 2. [Ključne karakteristike](#ključne-karakteristike)
 3. [Kako radi](#kako-radi)
-4. [Brzi start](#brzi-start)
+4. [Instalacija](#instalacija)
 5. [API referenca](#api-referenca)
 6. [Izvori oglasa](#izvori-oglasa)
 7. [AI pretraga i rangiranje](#ai-pretraga-i-rangiranje)
@@ -30,7 +30,7 @@ Open-source AI asistent za pronalazak posla — **lokalno na Windowsu 11**. Jeda
 9. [Sigurnost](#sigurnost)
 10. [Anonimnost: bez perzistencije](#anonimnost-bez-perzistencije)
 11. [Windows 11 aplikacija](#windows-11-aplikacija)
-12. [Lokalno pokretanje](#lokalno-pokretanje)
+12. [Razvoj](#razvoj)
 13. [Testiranje](#testiranje)
 14. [Struktura projekta](#struktura-projekta)
 15. [Status i poznata ograničenja](#status-i-poznata-ograničenja)
@@ -47,7 +47,7 @@ AgentMujoJob je besplatan, open-source asistent koji:
 - **razumije prirodni jezik** — npr. „Tražim posao terenskog komercijaliste u Tešnju ili okolini, plata najmanje 1.800 KM, mogu putovati”,
 - **rangira rezultate** po relevantnosti s razumljivim obrazloženjem (zašto odgovara / zašto ne),
 - **vodi direktno na originalni oglas** — nikad ne izmišlja oglase, plate, firme ni datume,
-- radi kao **instalabilna Windows 11 aplikacija** ili kao web UI na lokalnom backendu — podaci nikad ne napuštaju računar.
+- radi isključivo kao **instalabilna Windows 11 aplikacija** — nema web verzije; podaci nikad ne napuštaju računar.
 
 Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evropa → 4. svijet (uključujući remote)**. Rangiranje je po relevantnosti, ne samo po blizini.
 
@@ -64,7 +64,7 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 | 🧹 Kvalitet podataka | Normalizacija, deduplikacija, provjera svježine; nepoznato se prikazuje kao „Nije navedeno” |
 | 🤖 AI jezgro | OpenCode CLI s besplatnim modelom (bundlan u instalaciju) — **radi bez prijave i bez ključeva**; ako model nije dostupan, pretraga se iskreno nastavlja po ključnim riječima |
 | 🔒 Privatnost | Nema naloga, nema CV-jeva, nema historije pretrage; sirovi upiti se ne logiraju |
-| 🖥️ Dvije platforme | Web (Next.js) + Windows 11 installer (Tauri 2, .msi) na istom API-ju |
+| 🖥️ Jedna platforma | Windows 11 installer (Tauri 2, `.msi`) — bez web verzije i bez hostinga |
 | 🛡️ Sigurnost | SSRF zaštita, rate limiting, admin token, validacija ulaza — sve testirano |
 
 ---
@@ -72,14 +72,15 @@ Geografski prioritet (promjenjiv u pretrazi): **1. BiH → 2. Balkan → 3. Evro
 ## Kako radi
 
 ```
-┌──────────────┐      ┌──────────────┐
-│  Next.js web │──────▶              │
-└──────────────┘      │   FastAPI    │──▶ Store: samo memorija (bez baze, bez diska)
-┌──────────────┐      │   :8010      │
-│ Tauri 2 .msi │──────▶              │
-│ Windows 11   │      │ konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje
-└──────────────┘      └──────────────┘
+┌────────────────────────┐      ┌────────────────┐
+│ Windows 11 .msi        │      │   FastAPI      │──▶ Store: samo memorija (bez baze, bez diska)
+│ Tauri 2 + Next.js UI   │─────▶│   127.0.0.1    │
+│ (backend kao sidecar)  │      │ konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje
+└────────────────────────┘      └────────────────┘
 ```
+
+Nema web servera za korisnike: jedini ulaz je instalirana aplikacija. Backend sluša samo
+`127.0.0.1` i podiže se zajedno sa aplikacijom.
 
 Windows instalacija je samostalna: `.msi` nosi backend (PyInstaller sidecar) i OpenCode CLI,
 pa na korisničkom računaru nije potreban Python ni ručna instalacija CLI-ja.
@@ -88,55 +89,22 @@ Backend moduli (`backend/app/`): `main` (rute), `config` (env), `models` (tipovi
 
 ---
 
-## Brzi start
+## Instalacija
 
-### Preduslovi
+1. Otvori [**Releases**](https://github.com/xnet-ba/AgentMujoJob/releases) i preuzmi najnoviji `.msi`.
+2. Pokreni instalater. Windows može prikazati SmartScreen upozorenje (instalater nije potpisan): **Više informacija → Ipak pokreni**.
+3. Pokreni **AgentMujoJob** iz Start menija. Aplikacija odmah skenira izvore u pozadini; prvi rezultati su dostupni za nekoliko sekundi.
 
-- Python 3.12+, Node.js 22+, git. (Rust samo za lokalni Tauri build; Windows installer se pravi u CI-ju.)
+Nije potreban Python, Node.js, nalog ni API ključ. Deinstalacija ide kroz *Postavke → Aplikacije*.
 
-### 1. Backend
-
-```bash
-cd backend
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-cp ../.env.example .env   # obavezno unesi jak ADMIN_TOKEN
-venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010
-```
-
-Provjera: `curl http://127.0.0.1:8010/api/health` → `{"status":"ok",...}` (bez tajni).
-
-### 2. Probni sken (stvarni oglasi)
-
-```bash
-curl -X POST http://127.0.0.1:8010/api/admin/scan -H "X-Admin-Token: TVOJ_TOKEN"
-```
-
-### 3. Pretraga
-
-```bash
-curl -X POST http://127.0.0.1:8010/api/search \
-  -H "Content-Type: application/json" \
-  -d '{"upit":"Terenski komercijalist u Tešnju, plata najmanje 1800 KM"}'
-```
-
-### 4. Frontend
-
-```bash
-cd frontend && npm install && npm run dev
-# otvori http://localhost:3000
-# NEXT_PUBLIC_API_URL pokazuje na backend (npr. http://127.0.0.1:8010)
-```
-
-### 5. Testovi
-
-```bash
-cd backend && venv/bin/python -m pytest -q    # 28 testova
-cd frontend && npm test && npm run build       # 2 testa + build
-```
+> Za razvoj iz izvornog koda vidi [Razvoj](#razvoj). Web verzija aplikacije ne postoji.
 
 ---
 
 ## API referenca
+
+API je **interni**: sluša samo na `127.0.0.1` i koristi ga isključivo instalirana aplikacija.
+Nije javno izložen i nema web klijenta; primjeri ispod služe za razvoj i dijagnostiku.
 
 Sve rute vraćaju JSON; greške su strukturirane (`{"greska": "..."}`), bez stack tracea.
 
@@ -176,7 +144,7 @@ Svaki konektor ima: timeout 12s, limit veličine odgovora, SSRF provjeru, umjere
 
 | Izvor | Tip | Obuhvat | Rezultat testa |
 |---|---|---|---|
-| `klix-posao` (Klix Posao) | javni sitemap + schema.org `JobPosting` | BiH | ✅ 60 oglasa (od 186 aktivnih u sitemapu; cap 60/sken), pun opis/plata/tip ugovora |
+| `klix-posao` (Klix Posao) | javni sitemap + schema.org `JobPosting` | BiH | ✅ 100 oglasa (od 186 aktivnih u sitemapu; cap 60/sken), pun opis/plata/tip ugovora |
 | `mojposao-ba` (MojPosao.ba) | javne stranice pretrage (SSR) | BiH | ✅ 100 oglasa; naslov, poslodavac, lokacija, URL |
 | `greenhouse-eu` | javni boards API | Evropa + remote | ✅ 1150 oglasa |
 | `remotive` | javni API | svijet-remote | ✅ 10 oglasa |
@@ -187,7 +155,7 @@ Svaki konektor ima: timeout 12s, limit veličine odgovora, SSRF provjeru, umjere
 | `posao-hr-rss` | RSS | Hrvatska | ✅ 30 oglasa |
 | `wwr-rss` | RSS | svijet-remote | ✅ 92 oglasa |
 
-Ukupan sken svih izvora: **~1240 jedinstvenih oglasa za ~30 s** (broj varira sa izvorima) (dedup radi; pokreće se u pozadini pri startu).
+Ukupan sken svih izvora: **~2030 jedinstvenih oglasa za ~38 s** (broj varira sa izvorima) (dedup radi; pokreće se u pozadini pri startu).
 
 ### Provjereno i odbijeno (nije uključeno)
 
@@ -246,16 +214,29 @@ Tauri 2 omotač oko istog frontenda (`desktop/src-tauri/`): normalna instalacija
 
 ---
 
-## Lokalno pokretanje
+## Razvoj
 
-Aplikacija je namijenjena isključivo lokalnom radu na Windows 11 (instalacija kroz `.msi`). Nema javne domene ni hostinga: backend sluša `127.0.0.1:8010`, frontend je statički export unutar Tauri paketa, a podaci žive samo u memoriji procesa. Za razvoj: `uvicorn app.main:app --port 8010` u `backend/` i `npm run dev` u `frontend/`.
+Aplikacija se razvija i testira kroz Tauri (desktop prozor), ne kroz browser.
+Preduslovi: Python 3.12+, Node.js 22+, Rust (za Tauri).
+
+```bash
+# 1) zavisnosti
+cd frontend && npm ci
+cd ../backend && python3 -m venv venv && venv/bin/pip install -r requirements.txt
+
+# 2) desktop aplikacija u dev režimu (podiže i frontend i Tauri prozor)
+cd ../desktop && npm install && npm run tauri dev
+```
+
+Za izgradnju Windows instalatera koristi se CI workflow `windows-build.yml`
+(`.msi` se objavljuje na GitHub Release za tag `v*`). Detalji: [`docs/WINDOWS-BUILD.md`](docs/WINDOWS-BUILD.md).
 
 ---
 
 ## Testiranje
 
-- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI, iskrena degradacija na ključne riječi kad AI nedostaje, greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **28/28 prolazi.**
-- Frontend: `npm test` (2/2) + `npm run build` (uspješan).
+- Backend: `pytest` — normalizacija, dedup, parser kriterija, rangiranje, OpenCode AI, iskrena degradacija na ključne riječi kad AI nedostaje, greške izvora, neaktivni oglasi, API validacija/paginacija, rate limit, SSRF, tajne. **31/31 prolazi.**
+- Frontend: `npm test` (3/3) + `npm run build` (uspješan).
 - CI (GitHub Actions): `tests.yml` na svaki push + secret-scan; `windows-build.yml` ručno/na release.
 - Fixture podaci su jasno označeni testni i nikad se ne prikazuju kao produkcijski oglasi.
 
@@ -282,7 +263,7 @@ AgentMujoJob/
 
 ## Status i poznata ograničenja
 
-- ✅ Backend API + web UI implementirani, testirani, rade end-to-end sa stvarnim oglasima.
+- ✅ Backend API + desktop UI implementirani, testirani, rade end-to-end sa stvarnim oglasima.
 - ✅ Javan GitHub repo: `https://github.com/xnet-ba/AgentMujoJob`.
 - ✅ Anonimnost: nema baze ni snimanja — gašenjem appa svi podaci nestaju.
 - ✅ Lokalni rad: backend `127.0.0.1:8010` + statički frontend u Tauri paketu, bez javne domene i bez hostinga.

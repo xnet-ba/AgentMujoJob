@@ -39,7 +39,7 @@ a{color:var(--plava)}
 
 <section class="sekcija"><h2>Šta je AgentMujoJob</h2>
 <p>Besplatan AI asistent za pronalazak posla: pretražuje oglase iz više izvora, razumije upite na prirodnom jeziku (npr. <em>„Terenski komercijalist u Tešnju, plata najmanje 1.800 KM”</em>), rangira rezultate po relevantnosti s obrazloženjem i vodi direktno na <strong>originalni oglas</strong>. Bez registracije, bez CV-jeva, bez historije pretrage — po dizajnu.</p>
-<p>Geografski prioritet (promjenjiv): <strong>1. BiH → 2. Balkan → 3. Evropa → 4. svijet + remote</strong>. Dostupno kao web aplikacija i Windows 11 desktop aplikacija na istom backendu.</p></section>
+<p>Geografski prioritet (promjenjiv): <strong>1. BiH → 2. Balkan → 3. Evropa → 4. svijet + remote</strong>. Dostupno isključivo kao <strong>Windows 11 desktop aplikacija</strong> — nema web verzije.</p></section>
 
 <section class="sekcija"><h2>Ključne karakteristike</h2>
 <div class="mreza">
@@ -52,21 +52,17 @@ a{color:var(--plava)}
 </div></section>
 
 <section class="sekcija"><h2>Kako radi</h2>
-<div class="dijagram">Next.js web ──┐
-               ├──▶ FastAPI :8010 ──▶ Store: samo memorija (bez baze, bez diska)
-Tauri 2 .msi ──┘     konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje</div></section>
+<div class="dijagram">Windows 11 .msi (Tauri 2 + Next.js UI, backend kao sidecar)
+        └──▶ FastAPI 127.0.0.1:8010 ──▶ Store: samo memorija (bez baze, bez diska)
+             konektori ▶ normalizacija ▶ dedup ▶ AI ▶ rangiranje</div></section>
 
-<section class="sekcija"><h2>Brzi start</h2>
-<pre>cd backend
-python3 -m venv venv &amp;&amp; venv/bin/pip install -r requirements.txt
-cp ../.env.example .env   # unesi jak ADMIN_TOKEN
-venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010
+<section class="sekcija"><h2>Instalacija</h2>
+<p>Preuzmi najnoviji <code>.msi</code> sa <a href="https://github.com/xnet-ba/AgentMujoJob/releases">Releases</a> stranice i pokreni instalater.
+Windows može prikazati SmartScreen upozorenje (instalater nije potpisan): <em>Više informacija → Ipak pokreni</em>.</p>
+<pre>AgentMujoJob iz Start menija → skeniranje izvora u pozadini → pretraga
 
-# probni sken (stvarni oglasi):
-curl -X POST 127.0.0.1:8010/api/admin/scan -H "X-Admin-Token: TVOJ_TOKEN"
-
-# frontend:
-cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3000</pre></section>
+# nije potreban Python, Node.js, nalog ni API ključ
+# deinstalacija: Postavke → Aplikacije</pre></section>
 
 <section class="sekcija"><h2>API</h2>
 <table><tr><th>Metoda</th><th>Ruta</th><th>Opis</th></tr>
@@ -80,7 +76,7 @@ cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3
 
 <section class="sekcija"><h2>Izvori oglasa</h2>
 <table><tr><th>Izvor</th><th>Obuhvat</th><th>Status</th></tr>
-<tr><td>Klix Posao</td><td>BiH</td><td class="status-ok">✅ 60 oglasa (sitemap + JobPosting)</td></tr>
+<tr><td>Klix Posao</td><td>BiH</td><td class="status-ok">✅ 100 oglasa (sitemap + JobPosting)</td></tr>
 <tr><td>MojPosao.ba</td><td>BiH</td><td class="status-ok">✅ 100 oglasa (javna pretraga)</td></tr>
 <tr><td>Greenhouse boards API</td><td>Evropa + remote</td><td class="status-ok">✅ 1150 oglasa</td></tr>
 <tr><td>EURES / Remotive / RemoteOK</td><td>EU / svijet-remote</td><td class="status-ok">✅ 50 / 10 / 99 oglasa</td></tr>
@@ -89,11 +85,11 @@ cd frontend &amp;&amp; npm install &amp;&amp; npm run dev   # http://localhost:3
 
 <section class="sekcija"><h2>Status projekta</h2>
 <table><tr><th>Stavka</th><th>Stanje</th></tr>
-<tr><td>Backend API + web UI (testirano end-to-end)</td><td class="status-ok">✅ Gotovo</td></tr>
+<tr><td>Backend API + desktop UI (testirano end-to-end)</td><td class="status-ok">✅ Gotovo</td></tr>
 <tr><td>GitHub repo (javan)</td><td class="status-ok">✅ github.com/xnet-ba/AgentMujoJob</td></tr>
 <tr><td>Anonimnost</td><td class="status-ok">✅ Bez baze i diska — gašenjem sve nestaje</td></tr>
 <tr><td>Lokalni rad (Windows 11)</td><td class="status-ok">✅ Backend na 127.0.0.1 + statički frontend u Tauri paketu</td></tr>
-<tr><td>Windows .msi installer</td><td class="status-ceka">⏳ Pravi se u CI-ju (windows-latest)</td></tr>
+<tr><td>Windows .msi installer</td><td class="status-ok">✅ GitHub Releases (CI, windows-latest)</td></tr>
 <tr><td>BiH konektori</td><td class="status-ceka">⏳ Portali bez API/RSS — treba dogovor</td></tr></table></section>
 
 <section class="sekcija"><h2>Linkovi</h2>

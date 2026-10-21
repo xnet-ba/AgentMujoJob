@@ -19,7 +19,8 @@ class Settings:
     OPENCODE_MODEL: str = _get("OPENCODE_MODEL", "opencode/deepseek-v4.1-flash-free")
     OPENCODE_TIMEOUT: int = int(_get("OPENCODE_TIMEOUT", "45") or 45)
     # CORS
-    CORS_ORIGINS: str = _get("CORS_ORIGINS", "http://localhost:3000")
+    CORS_ORIGINS: str = _get("CORS_ORIGINS", "http://tauri.localhost,tauri://localhost")
+    # Dozvoljeni origin-i: Tauri webview (nema web/browser klijenta).
     # Rate limit
     RATE_LIMIT_PER_MIN: int = int(_get("RATE_LIMIT_PER_MIN", "60") or 60)
     AI_RATE_LIMIT_PER_MIN: int = int(_get("AI_RATE_LIMIT_PER_MIN", "10") or 10)

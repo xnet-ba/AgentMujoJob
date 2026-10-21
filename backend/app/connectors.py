@@ -301,7 +301,7 @@ class KlixPosaoKonektor:
     id = "klix-posao"
     naziv = "Klix Posao (BiH)"
     obuhvat = "Bosna i Hercegovina"
-    MAX_OGLASA = 60
+    MAX_OGLASA = 100
 
     def skeniraj(self) -> tuple[list[dict], str | None]:
         try:
@@ -419,7 +419,7 @@ REGISTAR: dict[str, object] = {
     "eures": EuresKonektor(),
     "posao-hr-rss": RssKonektor("posao-hr-rss", "Posao.hr (RSS)", "https://www.posao.hr/rss/", "Hrvatska", "Hrvatska"),
     "wwr-rss": RssKonektor("wwr-rss", "We Work Remotely (RSS)", "https://weworkremotely.com/remote-jobs.rss", "svijet", "svijet"),
-    # Klix je najsporiji (60 detaljnih stranica) pa ide zadnji.
+    # Klix je najsporiji (do 100 detaljnih stranica) pa ide zadnji.
     "klix-posao": KlixPosaoKonektor(),
 }
 
@@ -429,7 +429,7 @@ RSS_IZVORI = [
 
 META_IZVORA = {
     "klix-posao": {"url": "https://posao.klix.ba", "pristup": "javni sitemap + JobPosting JSON-LD",
-                   "pravila": "robots.txt dozvoljava sitemap i oglase (ne /api/); do 60 najnovijih oglasa/sken.",
+                   "pravila": "robots.txt dozvoljava sitemap i oglase (ne /api/); do 100 najnovijih oglasa/sken.",
                    "osvjezavanje": "svakih 6h",
                    "polja": "naslov, poslodavac, lokacija, opis, plata, tip ugovora, url, datum"},
     "mojposao-ba": {"url": "https://www.mojposao.ba/pretraga-poslova", "pristup": "javne stranice pretrage",
